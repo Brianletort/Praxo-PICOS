@@ -1,0 +1,13 @@
+* @Brianletort
+
+/services/api/ @Brianletort
+/services/workers/ @Brianletort
+/packages/shared/ @Brianletort
+/apps/web/ @Brianletort
+/apps/desktop/ @Brianletort
+/.github/ @Brianletort
+/.cursor/ @Brianletort
+/docs/ @Brianletort
+/Makefile @Brianletort
+/pyproject.toml @Brianletort
+/package.json @Brianletort

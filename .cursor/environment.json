@@ -1,0 +1,13 @@
+{
+  "install": "python3 -m venv .venv && source .venv/bin/activate && pip install -e '.[dev]' && npm install --workspaces",
+  "terminals": [
+    {
+      "name": "API",
+      "command": "source .venv/bin/activate && uvicorn services.api.src.praxo_picos_api.main:app --host 127.0.0.1 --port 8865"
+    },
+    {
+      "name": "Web",
+      "command": "cd apps/web && npm run dev"
+    }
+  ]
+}

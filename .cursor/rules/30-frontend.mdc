@@ -1,0 +1,13 @@
+---
+description: Frontend rules
+globs:
+  - "apps/web/**/*"
+---
+
+# Frontend rules
+
+- Test user-visible behavior, not implementation details.
+- Use Vitest + RTL for component behavior.
+- Use Playwright for full workflows and async page behavior.
+- Prefer stable selectors and accessible queries.
+- Keep API request/response contracts explicit.

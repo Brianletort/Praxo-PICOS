@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "praxo-picos"
+version = "0.1.0"
+description = "Praxo Personal Intelligence Operating System"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.34",
+  "pydantic>=2.10",
+  "python-dotenv>=1.0",
+  "pyyaml>=6.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-cov>=5.0",
+  "pytest-asyncio>=0.25",
+  "pytest-mock>=3.14",
+  "httpx>=0.28",
+  "ruff>=0.11",
+  "mypy>=1.15"
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "unit: fast isolated unit tests",
+  "integration: integration tests",
+  "contract: schema or payload contract tests",
+  "regression: bug regression tests",
+  "performance: performance budget tests",
+  "smoke: quick sanity checks"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true

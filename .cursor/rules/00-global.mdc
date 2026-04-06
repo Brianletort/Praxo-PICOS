@@ -1,0 +1,13 @@
+---
+description: Global Praxo-PICOS repository rules
+alwaysApply: true
+---
+
+# Global rules
+
+- Praxo-PICOS is a separate product repo from MemoryOS.
+- Do not reuse MemoryOS ports, repo-root runtime paths, or launch scripts without intentional migration.
+- Every code change must add or update tests unless docs-only.
+- Every bug fix must include a regression test.
+- Do not weaken privacy, localhost-only defaults, or secret handling.
+- Use the smallest coherent change needed to satisfy the issue.

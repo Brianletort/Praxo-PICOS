@@ -1,0 +1,13 @@
+---
+description: Testing and regression rules
+alwaysApply: true
+---
+
+# Testing rules
+
+- Use unit tests for pure logic.
+- Use integration tests for IO boundaries.
+- Use contract tests for env, config, schemas, and payloads.
+- Use Playwright for end-to-end flows.
+- Do not use retries to hide flaky tests.
+- For bug fixes, add regression coverage before or with the fix.

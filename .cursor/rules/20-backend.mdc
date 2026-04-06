@@ -1,0 +1,15 @@
+---
+description: Backend rules
+globs:
+  - "services/**/*.py"
+  - "packages/**/*.py"
+  - "tests/**/*.py"
+---
+
+# Backend rules
+
+- Prefer pure functions for parsing and normalization logic.
+- Isolate filesystem access from business logic.
+- Prefer temporary directories and fixtures over real user folders.
+- Keep runtime contracts in shared constants.
+- Use type hints for public functions.
