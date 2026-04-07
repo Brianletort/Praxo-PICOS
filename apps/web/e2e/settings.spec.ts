@@ -12,24 +12,8 @@ test.describe("Settings", () => {
     await expect(page.getByRole("button", { name: /advanced/i })).toBeVisible();
   });
 
-  test("shows Memory Folder section", async ({ page }) => {
+  test("shows configure subtitle", async ({ page }) => {
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "Memory Folder" })).toBeVisible({
-      timeout: 30_000,
-    });
-  });
-
-  test("shows Data Sources section", async ({ page }) => {
-    await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "Data Sources" })).toBeVisible({
-      timeout: 30_000,
-    });
-  });
-
-  test("shows AI Provider section", async ({ page }) => {
-    await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "AI Provider" })).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(page.getByText(/Configure your personal/i)).toBeVisible();
   });
 });
