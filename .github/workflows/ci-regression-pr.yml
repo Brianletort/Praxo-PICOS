@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install Python deps
         run: |
@@ -28,7 +28,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Install web deps
-        run: cd apps/web && npm ci
+        run: cd apps/web && npm install
 
       - name: Run fast regression
         run: make regression-fast
