@@ -12,7 +12,7 @@ htmlcov/
 node_modules/
 apps/web/node_modules/
 apps/desktop/node_modules/
-package-lock.json
+# Keep package-lock.json committed for reproducible CI builds
 playwright-report/
 test-results/
 artifacts/

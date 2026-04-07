@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -37,7 +37,7 @@ async def test_create_extracted_record(in_memory_session: AsyncSession):
         source_id="msg-001",
         title="Test email",
         body="Hello world",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
     in_memory_session.add(record)
     await in_memory_session.commit()
@@ -94,7 +94,7 @@ async def test_source_types_are_all_defined():
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_multiple_records_same_source(in_memory_session: AsyncSession):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for i in range(5):
         in_memory_session.add(
             ExtractedRecord(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -18,7 +18,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _new_id() -> str:
@@ -29,7 +29,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class SourceType(str, enum.Enum):
+class SourceType(enum.StrEnum):
     MAIL = "mail"
     CALENDAR = "calendar"
     SCREEN = "screen"

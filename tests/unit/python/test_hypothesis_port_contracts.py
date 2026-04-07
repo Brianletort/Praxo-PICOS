@@ -1,8 +1,8 @@
-from hypothesis import given, strategies as st
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from packages.shared.src.praxo_picos_shared.runtime_contracts import RuntimeContracts
-
 
 VALID_PORT_RANGE = st.integers(min_value=1024, max_value=65535)
 

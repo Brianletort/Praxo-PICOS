@@ -2,7 +2,6 @@ import pytest
 
 from packages.shared.src.praxo_picos_shared.runtime_contracts import RuntimeContracts
 
-
 MEMORYOS_PORTS = {8765, 3000, 7777}
 
 

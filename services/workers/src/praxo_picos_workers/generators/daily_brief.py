@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from ..extractors.base import ExtractionRecord
@@ -23,7 +23,7 @@ class DailyBriefGenerator:
         records: list[ExtractionRecord],
         date: datetime | None = None,
     ) -> str:
-        target_date = date or datetime.now(timezone.utc)
+        target_date = date or datetime.now(UTC)
         date_str = target_date.strftime("%Y-%m-%d")
         day_name = target_date.strftime("%A")
 
@@ -31,16 +31,16 @@ class DailyBriefGenerator:
         sections = self._build_sections(by_source)
 
         brief_parts = [
-            f"---",
-            f"source: picos-generated",
-            f"type: daily-brief",
+            "---",
+            "source: picos-generated",
+            "type: daily-brief",
             f"date: {date_str}",
-            f"generated_at: {datetime.now(timezone.utc).isoformat()}",
+            f"generated_at: {datetime.now(UTC).isoformat()}",
             f"record_count: {len(records)}",
-            f"---",
-            f"",
+            "---",
+            "",
             f"# Daily Brief — {day_name}, {date_str}",
-            f"",
+            "",
         ]
 
         if not records:
@@ -98,5 +98,5 @@ class DailyBriefGenerator:
         return sections
 
     def generate_filename(self, date: datetime | None = None) -> str:
-        target_date = date or datetime.now(timezone.utc)
+        target_date = date or datetime.now(UTC)
         return target_date.strftime("%Y-%m-%d_daily-brief.md")

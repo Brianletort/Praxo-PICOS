@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -19,7 +19,7 @@ class TestExtractionRecord:
             source_id="msg-001",
             title="Test",
             body="Hello",
-            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 1, 1, tzinfo=UTC),
             metadata={"from": "test@example.com"},
         )
         d = record.to_dict()
@@ -35,7 +35,7 @@ class TestExtractionRecord:
             source_id="note-1",
             title="Note",
             body="",
-            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 1, 1, tzinfo=UTC),
         )
         assert record.to_dict()["metadata"] == {}
 
@@ -49,7 +49,7 @@ class TestDocumentsExtractor:
         (tmp_path / "image.png").write_bytes(b"\x89PNG")
 
         ext = DocumentsExtractor(watch_path=tmp_path)
-        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=UTC))
 
         assert len(records) == 2
         names = {r.title for r in records}
@@ -62,7 +62,7 @@ class TestDocumentsExtractor:
         (tmp_path / "binary.exe").write_bytes(b"\x00\x01")
 
         ext = DocumentsExtractor(watch_path=tmp_path)
-        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=UTC))
         assert len(records) == 0
 
     @pytest.mark.asyncio
@@ -93,7 +93,7 @@ class TestVaultExtractor:
         (tmp_path / "readme.txt").write_text("Not markdown")
 
         ext = VaultExtractor(vault_path=tmp_path)
-        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=UTC))
 
         assert len(records) == 2
         assert all(r.source == "vault" for r in records)
@@ -106,7 +106,7 @@ class TestVaultExtractor:
         (tmp_path / "real.md").write_text("User note")
 
         ext = VaultExtractor(vault_path=tmp_path)
-        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        records = await ext.extract(since=datetime(2020, 1, 1, tzinfo=UTC))
 
         assert len(records) == 1
         assert records[0].title == "real"

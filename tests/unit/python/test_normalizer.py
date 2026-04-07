@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -17,7 +17,7 @@ class TestNormalizer:
             "source_id": "msg-001",
             "title": "Test Email",
             "body": "Hello world",
-            "timestamp": datetime(2026, 4, 1, 10, 30, tzinfo=timezone.utc),
+            "timestamp": datetime(2026, 4, 1, 10, 30, tzinfo=UTC),
             "metadata": {"from": "alice@example.com"},
         }
         defaults.update(kwargs)
