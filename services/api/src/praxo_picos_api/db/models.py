@@ -41,7 +41,7 @@ class ExtractedRecord(Base):
     __tablename__ = "extracted_records"
 
     id = Column(String(32), primary_key=True, default=_new_id)
-    source = Column(Enum(SourceType), nullable=False, index=True)
+    source: Column[SourceType] = Column(Enum(SourceType), nullable=False, index=True)
     source_id = Column(String(255), nullable=True)
     title = Column(String(500), nullable=True)
     body = Column(Text, nullable=True)
@@ -59,7 +59,7 @@ class DataFlowStatus(Base):
 
     __tablename__ = "data_flow_status"
 
-    source = Column(Enum(SourceType), primary_key=True)
+    source: Column[SourceType] = Column(Enum(SourceType), primary_key=True)
     last_record_at = Column(DateTime(timezone=True), nullable=True)
     last_check_at = Column(DateTime(timezone=True), nullable=True)
     records_last_interval = Column(Integer, default=0)

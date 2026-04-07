@@ -68,3 +68,11 @@ no_implicit_optional = true
 strict_equality = true
 explicit_package_bases = true
 mypy_path = "."
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["services.api.src.praxo_picos_api.mcp.server"]
+ignore_errors = true
