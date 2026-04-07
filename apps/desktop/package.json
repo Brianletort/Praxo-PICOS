@@ -1,0 +1,35 @@
+{
+  "name": "praxo-picos-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "electron-builder --mac",
+    "build:dir": "electron-builder --mac --dir",
+    "test": "node --test src/__tests__/*.test.js"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.praxo.picos",
+    "productName": "Praxo-PICOS",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg", "zip"],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "../../packaging/entitlements.plist",
+      "entitlementsInherit": "../../packaging/entitlements.plist"
+    },
+    "directories": {
+      "output": "../../dist/desktop"
+    },
+    "files": [
+      "src/**/*",
+      "!node_modules/**/*"
+    ]
+  }
+}

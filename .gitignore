@@ -27,3 +27,8 @@ __pycache__/
 dist/
 build/
 .next/
+
+# Backup files
+*.bak.*
+AGENTS.bak.*
+.hypothesis/

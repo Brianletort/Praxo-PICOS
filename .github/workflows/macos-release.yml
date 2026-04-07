@@ -1,0 +1,65 @@
+name: macos-release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-sign-notarize:
+    name: build-sign-notarize
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pytest -m "unit or contract or smoke" --timeout=60
+
+      - name: Assemble app bundle
+        run: bash packaging/assemble_app.sh
+
+      - name: Import signing certs
+        if: ${{ secrets.MACOS_CERT_P12_BASE64 != '' }}
+        env:
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: bash packaging/import_certs.sh
+
+      - name: Sign and package
+        env:
+          SIGN_ID_APP: ${{ secrets.SIGN_ID_APP }}
+          SIGN_ID_INSTALLER: ${{ secrets.SIGN_ID_INSTALLER }}
+        run: bash packaging/sign_and_package.sh
+
+      - name: Notarize and staple
+        if: ${{ secrets.NOTARY_KEYCHAIN_PROFILE != '' }}
+        env:
+          NOTARY_KEYCHAIN_PROFILE: ${{ secrets.NOTARY_KEYCHAIN_PROFILE }}
+        run: bash packaging/notarize_and_staple.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Praxo-PICOS-macOS
+          path: |
+            dist/Praxo-PICOS.pkg
+            dist/desktop/mac-arm64/*.dmg

@@ -11,8 +11,15 @@ dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.34",
   "pydantic>=2.10",
+  "pydantic-settings>=2.8",
   "python-dotenv>=1.0",
-  "pyyaml>=6.0"
+  "pyyaml>=6.0",
+  "sqlalchemy[asyncio]>=2.0",
+  "aiosqlite>=0.20",
+  "qdrant-client>=1.12",
+  "httpx>=0.28",
+  "mcp[cli]>=1.9",
+  "openai>=1.60",
 ]
 
 [project.optional-dependencies]
@@ -20,11 +27,16 @@ dev = [
   "pytest>=8.3",
   "pytest-cov>=5.0",
   "pytest-asyncio>=0.25",
+  "pytest-timeout>=2.3",
   "pytest-mock>=3.14",
-  "httpx>=0.28",
+  "hypothesis>=6.151",
   "ruff>=0.11",
   "mypy>=1.15"
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["services.*", "packages.*"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"

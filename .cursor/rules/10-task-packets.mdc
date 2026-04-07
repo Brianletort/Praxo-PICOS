@@ -1,0 +1,20 @@
+---
+description: Task Packet contract for praxo-picos.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Task Packets
+
+When you start work, produce or request a Task Packet with:
+
+- project_key: praxo-picos
+- linear_issue_id, linear_session_id, run_id
+- risk_tier: 0|1|2|3
+- goal + acceptance criteria
+- explicit scope boundaries
+- required evaluations (tests, security scan, DQ, perf)
+- gates required by tier
+- outputs required (PR link, test commands, results)
+
+Do not proceed without acceptance criteria.

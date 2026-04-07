@@ -1,0 +1,29 @@
+---
+description: Risk tiers and gating rules for praxo-picos.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Risk tiers (0-3)
+
+
+Tier 0: drafting, triage, docs — no approvals
+  Gates: none
+
+Tier 1: scoped code changes — human merge review required
+  Gates: merge
+
+Tier 2: auth, schemas, deps, data contracts, perf-critical paths — pre-approval + DQ/perf/security gates
+  Gates: architecture, data, security, performance, merge
+
+Tier 3: production actions, releases, data mutation — dual approvals + release workflow + post-check
+  Gates: architecture, data, security, performance, release, merge
+
+
+Stop and request approval if:
+- schema or contract changes
+- auth/permissions changes
+- infra changes
+- production actions
+
+Current project default tier: 1

@@ -1,13 +1,20 @@
 ---
-description: Global Praxo-PICOS repository rules
+description: Global rules for Praxo-Picos (praxo-picos).
+globs: ["**/*"]
 alwaysApply: true
 ---
 
-# Global rules
+# Praxo-Picos Global Cursor Rules
 
-- Praxo-PICOS is a separate product repo from MemoryOS.
-- Do not reuse MemoryOS ports, repo-root runtime paths, or launch scripts without intentional migration.
-- Every code change must add or update tests unless docs-only.
-- Every bug fix must include a regression test.
-- Do not weaken privacy, localhost-only defaults, or secret handling.
-- Use the smallest coherent change needed to satisfy the issue.
+Project: praxo-picos
+Default risk tier: 1
+
+- Always use the Task Packet format in `.cursor/prompts/task-packet.md`.
+- Prefer small diffs and composable refactors.
+- Emit or update unit tests for any behavior changes.
+- All webhook handlers:
+  - must return quickly (no network calls inline)
+  - must verify signatures before processing
+- Never include secrets in code, logs, prompts, or PRs.
+- Every change must reference the project_key `praxo-picos` in its task packet.
+- Default risk tier is 1; escalate if actual risk is higher.
