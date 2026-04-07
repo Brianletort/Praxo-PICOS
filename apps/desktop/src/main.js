@@ -12,6 +12,7 @@ let supervisor = null;
 let healingEngine = null;
 
 function createWindow() {
+  const iconPath = path.join(__dirname, "..", "assets", "icon.png");
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -19,6 +20,7 @@ function createWindow() {
     minHeight: 600,
     title: "Praxo-PICOS",
     titleBarStyle: "hiddenInset",
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -38,7 +40,13 @@ function createWindow() {
 }
 
 function createTray() {
-  const icon = nativeImage.createEmpty();
+  const iconPath = path.join(__dirname, "..", "assets", "icon.png");
+  let icon;
+  try {
+    icon = nativeImage.createFromPath(iconPath).resize({ width: 18, height: 18 });
+  } catch {
+    icon = nativeImage.createEmpty();
+  }
   tray = new Tray(icon);
   tray.setToolTip("Praxo-PICOS");
 

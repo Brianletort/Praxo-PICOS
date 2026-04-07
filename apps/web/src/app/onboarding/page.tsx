@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { api } from "@/lib/api";
 
 const STEPS = [
   { title: "Pick your Memory Folder", description: "Where should we store your daily summaries and notes?" },
@@ -10,7 +12,26 @@ const STEPS = [
   { title: "Connect Agent Zero", description: "Add an AI assistant that can search your memories" },
 ];
 
+function onboardingToSaveBody(c: {
+  vaultPath: string;
+  sources: Record<string, boolean>;
+  provider: string;
+  agentZero: boolean;
+}): Record<string, any> {
+  return {
+    vault_path: c.vaultPath,
+    mail_enabled: c.sources.mail,
+    calendar_enabled: c.sources.calendar,
+    screen_enabled: c.sources.screen,
+    documents_enabled: c.sources.documents,
+    vault_enabled: c.sources.vault,
+    llm_provider: c.provider,
+    agent_zero_enabled: c.agentZero,
+  };
+}
+
 export default function OnboardingPage() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState({
     vaultPath: "",
@@ -18,10 +39,29 @@ export default function OnboardingPage() {
     provider: "openai",
     agentZero: false,
   });
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
   const currentStep = STEPS[step];
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
+
+  async function handleNextOrFinish() {
+    if (!isLast) {
+      setStep(step + 1);
+      return;
+    }
+    setFinishError(null);
+    setFinishing(true);
+    try {
+      await api.config.save(onboardingToSaveBody(config));
+      router.push("/");
+    } catch (e) {
+      setFinishError(e instanceof Error ? e.message : "Could not save configuration");
+    } finally {
+      setFinishing(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white p-8 dark:bg-zinc-950">
@@ -163,20 +203,30 @@ export default function OnboardingPage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between">
-          <button
-            onClick={() => setStep(step - 1)}
-            disabled={isFirst}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 disabled:opacity-30 dark:border-zinc-600 dark:text-zinc-300"
-          >
-            Back
-          </button>
-          <button
-            onClick={() => (isLast ? (window.location.href = "/") : setStep(step + 1))}
-            className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-          >
-            {isLast ? "Finish Setup" : "Next"}
-          </button>
+        <div className="space-y-3">
+          {finishError && (
+            <p className="text-center text-sm text-red-600 dark:text-red-400" role="alert">
+              {finishError}
+            </p>
+          )}
+          <div className="flex justify-between">
+            <button
+              type="button"
+              onClick={() => setStep(step - 1)}
+              disabled={isFirst}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 disabled:opacity-30 dark:border-zinc-600 dark:text-zinc-300"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleNextOrFinish}
+              disabled={finishing}
+              className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            >
+              {isLast ? (finishing ? "Saving…" : "Finish Setup") : "Next"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

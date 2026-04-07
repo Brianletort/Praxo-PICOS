@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5"/>
+      <stop offset="50%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c7d2fe"/>
+      <stop offset="100%" style="stop-color:#e0e7ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="260" rx="16" fill="url(#bgGrad)"/>
+
+  <!-- Subtle network pattern (left side) -->
+  <g opacity="0.12" stroke="#fff" stroke-width="1" fill="none">
+    <circle cx="80" cy="60" r="20"/>
+    <circle cx="140" cy="120" r="15"/>
+    <circle cx="60" cy="170" r="12"/>
+    <circle cx="160" cy="200" r="10"/>
+    <circle cx="120" cy="50" r="8"/>
+    <line x1="80" y1="60" x2="140" y2="120"/>
+    <line x1="140" y1="120" x2="60" y2="170"/>
+    <line x1="60" y1="170" x2="160" y2="200"/>
+    <line x1="80" y1="60" x2="120" y2="50"/>
+    <line x1="140" y1="120" x2="160" y2="200"/>
+  </g>
+
+  <!-- Subtle network pattern (right side) -->
+  <g opacity="0.10" stroke="#fff" stroke-width="1" fill="none">
+    <circle cx="780" cy="80" r="16"/>
+    <circle cx="840" cy="140" r="12"/>
+    <circle cx="760" cy="190" r="14"/>
+    <circle cx="830" cy="210" r="8"/>
+    <circle cx="810" cy="60" r="6"/>
+    <line x1="780" y1="80" x2="840" y2="140"/>
+    <line x1="840" y1="140" x2="760" y2="190"/>
+    <line x1="760" y1="190" x2="830" y2="210"/>
+    <line x1="780" y1="80" x2="810" y2="60"/>
+  </g>
+
+  <!-- Logo mark (inline) -->
+  <g transform="translate(270, 55)">
+    <rect width="64" height="64" rx="14" fill="rgba(255,255,255,0.15)"/>
+    <circle cx="32" cy="22" r="5.5" fill="none" stroke="#fff" stroke-width="2"/>
+    <circle cx="18" cy="40" r="4" fill="none" stroke="#fff" stroke-width="1.6"/>
+    <circle cx="46" cy="40" r="4" fill="none" stroke="#fff" stroke-width="1.6"/>
+    <circle cx="24" cy="54" r="3.2" fill="none" stroke="#fff" stroke-width="1.4"/>
+    <circle cx="40" cy="54" r="3.2" fill="none" stroke="#fff" stroke-width="1.4"/>
+    <line x1="28" y1="26" x2="21" y2="37" stroke="#fff" stroke-width="1.4" opacity="0.7"/>
+    <line x1="36" y1="26" x2="43" y2="37" stroke="#fff" stroke-width="1.4" opacity="0.7"/>
+    <line x1="18" y1="44" x2="24" y2="51" stroke="#fff" stroke-width="1.2" opacity="0.6"/>
+    <line x1="46" y1="44" x2="40" y2="51" stroke="#fff" stroke-width="1.2" opacity="0.6"/>
+    <line x1="22" y1="40" x2="42" y2="40" stroke="#fff" stroke-width="1.2" opacity="0.4"/>
+    <circle cx="32" cy="22" r="2" fill="#fff"/>
+    <circle cx="18" cy="40" r="1.8" fill="#fff"/>
+    <circle cx="46" cy="40" r="1.8" fill="#fff"/>
+    <circle cx="24" cy="54" r="1.5" fill="#fff"/>
+    <circle cx="40" cy="54" r="1.5" fill="#fff"/>
+  </g>
+
+  <!-- Title text -->
+  <text x="350" y="98" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="42" font-weight="700" fill="#ffffff" letter-spacing="-0.5">
+    Praxo-PICOS
+  </text>
+
+  <!-- Subtitle -->
+  <text x="352" y="132" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" fill="#c7d2fe" letter-spacing="0.3">
+    Personal Intelligence &amp; Context Operating System
+  </text>
+
+  <!-- Tagline -->
+  <text x="300" y="190" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="15" fill="#e0e7ff" opacity="0.85">
+    Your Mac already knows everything about your work.
+  </text>
+  <text x="300" y="212" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="15" fill="#e0e7ff" font-weight="600" opacity="0.95">
+    Praxo-PICOS remembers it for you.
+  </text>
+</svg>

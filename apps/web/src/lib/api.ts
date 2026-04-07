@@ -58,4 +58,23 @@ export const api = {
     status: (name: string) => apiFetch<SourceStatus>(`/api/sources/${name}`),
   },
   dataFlow: () => apiFetch<{ data_flow: DataFlowEntry[] }>("/api/data-flow"),
+  config: {
+    get: () => apiFetch<{ config: Record<string, any> }>("/api/config"),
+    save: (config: Record<string, any>) =>
+      apiFetch<{ status: string }>("/api/config", {
+        method: "POST",
+        body: JSON.stringify(config),
+      }),
+    patch: (updates: Record<string, any>) =>
+      apiFetch<{ status: string }>("/api/config", {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      }),
+  },
+  extract: {
+    run: () =>
+      apiFetch<{ status: string; result?: any; error?: string }>("/api/extract/run", {
+        method: "POST",
+      }),
+  },
 };

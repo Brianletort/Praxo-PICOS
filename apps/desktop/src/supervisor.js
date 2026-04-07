@@ -1,10 +1,43 @@
-const { spawn } = require("child_process");
+const { spawn, execSync } = require("child_process");
 const http = require("http");
+const path = require("path");
+const fs = require("fs");
+
+function getRepoRoot() {
+  try {
+    const { app } = require("electron");
+    if (app.isPackaged) {
+      return path.join(process.resourcesPath, "app");
+    }
+  } catch {
+    // Not running inside Electron (e.g. tests)
+  }
+  return path.resolve(__dirname, "..", "..", "..");
+}
+
+function findPython() {
+  const root = getRepoRoot();
+  const venvPython = path.join(root, ".venv", "bin", "python3");
+  if (fs.existsSync(venvPython)) return venvPython;
+  try {
+    return execSync("which python3", { encoding: "utf8" }).trim();
+  } catch {
+    return "python3";
+  }
+}
+
+function findNode() {
+  try {
+    return execSync("which node", { encoding: "utf8" }).trim();
+  } catch {
+    return "node";
+  }
+}
 
 const SERVICE_GRAPH = [
   {
     name: "qdrant",
-    command: null,
+    getCommand: () => null,
     healthUrl: "http://127.0.0.1:6733/healthz",
     healthInterval: 10000,
     dependsOn: [],
@@ -12,23 +45,41 @@ const SERVICE_GRAPH = [
   },
   {
     name: "api",
-    command: null,
+    getCommand: () => {
+      const py = findPython();
+      const root = getRepoRoot();
+      return [
+        py, "-m", "uvicorn",
+        "services.api.src.praxo_picos_api.main:app",
+        "--host", "127.0.0.1", "--port", "8865",
+      ];
+    },
+    cwd: () => getRepoRoot(),
     healthUrl: "http://127.0.0.1:8865/health",
     healthInterval: 10000,
-    dependsOn: ["qdrant"],
+    dependsOn: [],
     managed: true,
   },
   {
     name: "workers",
-    command: null,
+    getCommand: () => null,
     healthUrl: null,
     healthInterval: 30000,
-    dependsOn: ["api", "qdrant"],
-    managed: true,
+    dependsOn: ["api"],
+    managed: false,
   },
   {
     name: "web",
-    command: null,
+    getCommand: () => {
+      const node = findNode();
+      const root = getRepoRoot();
+      const nextBin = path.join(root, "apps", "web", "node_modules", ".bin", "next");
+      if (fs.existsSync(nextBin)) {
+        return [nextBin, "start", "-p", "3777"];
+      }
+      return [node, "node_modules/.bin/next", "start", "-p", "3777"];
+    },
+    cwd: () => path.join(getRepoRoot(), "apps", "web"),
     healthUrl: "http://127.0.0.1:3777",
     healthInterval: 15000,
     dependsOn: ["api"],
@@ -36,7 +87,15 @@ const SERVICE_GRAPH = [
   },
   {
     name: "mcp",
-    command: null,
+    getCommand: () => {
+      const py = findPython();
+      return [
+        py, "-m",
+        "services.api.src.praxo_picos_api.mcp.runner",
+        "--port", "8870",
+      ];
+    },
+    cwd: () => getRepoRoot(),
     healthUrl: "http://127.0.0.1:8870/health",
     healthInterval: 15000,
     dependsOn: ["api"],
@@ -44,7 +103,7 @@ const SERVICE_GRAPH = [
   },
   {
     name: "agent-zero",
-    command: null,
+    getCommand: () => null,
     healthUrl: "http://127.0.0.1:50001",
     healthInterval: 30000,
     dependsOn: ["api", "mcp"],
@@ -111,6 +170,7 @@ class ServiceSupervisor {
       const svc = this._services.get(name);
       if (svc && svc.managed) {
         await this.start(name);
+        await new Promise((r) => setTimeout(r, 2000));
       }
       this._startHealthPolling(name);
     }
@@ -118,27 +178,52 @@ class ServiceSupervisor {
 
   async start(name) {
     const svc = this._services.get(name);
-    if (!svc || !svc.command) {
+    if (!svc) return;
+
+    const command = svc.getCommand ? svc.getCommand() : null;
+    if (!command) {
       svc.status = "not_configured";
       return;
     }
 
+    const cwd = svc.cwd ? svc.cwd() : getRepoRoot();
+
     try {
-      const proc = spawn(svc.command[0], svc.command.slice(1), {
-        stdio: "pipe",
+      const proc = spawn(command[0], command.slice(1), {
+        stdio: ["pipe", "pipe", "pipe"],
         detached: false,
+        cwd,
+        env: { ...process.env, PYTHONPATH: getRepoRoot() },
       });
+
       this._processes.set(name, proc);
       svc.pid = proc.pid;
       svc.status = "starting";
 
+      proc.stdout?.on("data", (d) => {
+        const line = d.toString().trim();
+        if (line) console.log(`[${name}] ${line}`);
+      });
+
+      proc.stderr?.on("data", (d) => {
+        const line = d.toString().trim();
+        if (line) console.error(`[${name}] ${line}`);
+      });
+
       proc.on("exit", (code) => {
-        svc.status = "stopped";
+        svc.status = code === 0 ? "stopped" : "crashed";
         svc.pid = null;
         this._processes.delete(name);
       });
+
+      proc.on("error", (err) => {
+        svc.status = "error";
+        svc.pid = null;
+        console.error(`[${name}] spawn error: ${err.message}`);
+      });
     } catch (err) {
       svc.status = "error";
+      console.error(`[${name}] failed to start: ${err.message}`);
     }
   }
 

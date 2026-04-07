@@ -41,6 +41,20 @@ export default function SourcesPage() {
     fetchSources();
   }, [fetchSources]);
 
+  async function setSourceEnabled(name: string, checked: boolean) {
+    const previous = sources.find((s) => s.name === name)?.enabled ?? false;
+    setSources((list) =>
+      list.map((s) => (s.name === name ? { ...s, enabled: checked } : s))
+    );
+    try {
+      await api.config.patch({ [`${name}_enabled`]: checked });
+    } catch {
+      setSources((list) =>
+        list.map((s) => (s.name === name ? { ...s, enabled: previous } : s))
+      );
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -93,7 +107,8 @@ export default function SourcesPage() {
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
                     type="checkbox"
-                    defaultChecked={src.enabled}
+                    checked={src.enabled}
+                    onChange={(e) => void setSourceEnabled(src.name, e.target.checked)}
                     className="peer sr-only"
                   />
                   <div className="h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-emerald-500 peer-checked:after:translate-x-full dark:bg-zinc-700" />

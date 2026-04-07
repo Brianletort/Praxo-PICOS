@@ -42,6 +42,8 @@ export default function HealthPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [dataFlow, setDataFlow] = useState<DataFlowEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [extractLoading, setExtractLoading] = useState(false);
+  const [extractMessage, setExtractMessage] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -54,6 +56,26 @@ export default function HealthPage() {
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  async function runExtraction() {
+    setExtractLoading(true);
+    setExtractMessage(null);
+    try {
+      const r = await api.extract.run();
+      if (r.status === "error" && r.error) {
+        setExtractMessage(`Extraction failed: ${r.error}`);
+      } else {
+        setExtractMessage(
+          r.status === "completed" ? "Extraction completed." : `Status: ${r.status}`
+        );
+      }
+    } catch (e) {
+      setExtractMessage(e instanceof Error ? e.message : "Extraction request failed");
+    } finally {
+      setExtractLoading(false);
+      await fetchAll();
+    }
+  }
 
   const services: { name: string; status: CardStatus; detail: string }[] = [];
   if (health) {
@@ -166,13 +188,14 @@ export default function HealthPage() {
             </h2>
             <div className="flex flex-wrap gap-3">
               {[
-                { label: "Restart All Services", variant: "primary" },
-                { label: "Recheck Permissions", variant: "secondary" },
-                { label: "Rebuild Index", variant: "secondary" },
-                { label: "Export Diagnostics", variant: "secondary" },
+                { label: "Restart All Services", variant: "primary" as const },
+                { label: "Recheck Permissions", variant: "secondary" as const },
+                { label: "Rebuild Index", variant: "secondary" as const },
+                { label: "Export Diagnostics", variant: "secondary" as const },
               ].map((action) => (
                 <button
                   key={action.label}
+                  type="button"
                   onClick={action.label === "Restart All Services" ? fetchAll : undefined}
                   className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                     action.variant === "primary"
@@ -183,7 +206,18 @@ export default function HealthPage() {
                   {action.label}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => void runExtraction()}
+                disabled={extractLoading}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              >
+                {extractLoading ? "Running extraction…" : "Run Extraction"}
+              </button>
             </div>
+            {extractMessage && (
+              <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{extractMessage}</p>
+            )}
           </section>
         </>
       )}

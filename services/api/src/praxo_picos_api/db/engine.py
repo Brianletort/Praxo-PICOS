@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from .models import Base
@@ -37,6 +38,14 @@ async def create_tables(engine: AsyncEngine | None = None) -> None:
     engine = engine or get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS search_fts "
+                "USING fts5(record_id, content, source, tokenize='porter')"
+            )
+        )
+
+
 
 
 def reset_engine() -> None:
