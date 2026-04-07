@@ -8,11 +8,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from services.api.src.praxo_picos_api.config.manager import ConfigManager
 from services.api.src.praxo_picos_api.config.schema import PicosSettings
 from services.api.src.praxo_picos_api.db.models import (
     DataFlowStatus,
@@ -32,20 +34,37 @@ logger = logging.getLogger(__name__)
 DEFAULT_INTERVAL_SECONDS = 900  # 15 minutes
 
 
+def _load_effective_config(settings: PicosSettings) -> dict:
+    """Merge saved YAML config over PicosSettings defaults."""
+    mgr = ConfigManager(settings)
+    yaml_cfg = mgr.load_yaml()
+    return {
+        "mail_enabled": yaml_cfg.get("mail_enabled", settings.mail_enabled),
+        "calendar_enabled": yaml_cfg.get("calendar_enabled", settings.calendar_enabled),
+        "screen_enabled": yaml_cfg.get("screen_enabled", settings.screen_enabled),
+        "documents_enabled": yaml_cfg.get("documents_enabled", settings.documents_enabled),
+        "vault_enabled": yaml_cfg.get("vault_enabled", settings.vault_enabled),
+        "vault_path": yaml_cfg.get("vault_path", str(settings.vault_path or "")),
+        "documents_path": yaml_cfg.get("documents_path", str(settings.documents_path or "")),
+        "screenpipe_port": yaml_cfg.get("screenpipe_port", settings.screenpipe_port),
+    }
+
+
 def _build_extractors(settings: PicosSettings) -> list[BaseExtractor]:
+    cfg = _load_effective_config(settings)
     extractors: list[BaseExtractor] = []
-    if settings.mail_enabled:
+    if cfg["mail_enabled"]:
         extractors.append(MailExtractor())
-    if settings.calendar_enabled:
+    if cfg["calendar_enabled"]:
         extractors.append(CalendarExtractor())
-    if settings.screen_enabled:
+    if cfg["screen_enabled"]:
         extractors.append(
-            ScreenpipeExtractor(base_url=f"http://127.0.0.1:{settings.screenpipe_port}")
+            ScreenpipeExtractor(base_url=f"http://127.0.0.1:{cfg['screenpipe_port']}")
         )
-    if settings.documents_enabled and settings.documents_path:
-        extractors.append(DocumentsExtractor(watch_path=settings.documents_path))
-    if settings.vault_enabled and settings.vault_path:
-        extractors.append(VaultExtractor(vault_path=settings.vault_path))
+    if cfg["documents_enabled"] and cfg["documents_path"]:
+        extractors.append(DocumentsExtractor(watch_path=Path(cfg["documents_path"])))
+    if cfg["vault_enabled"] and cfg["vault_path"]:
+        extractors.append(VaultExtractor(vault_path=Path(cfg["vault_path"])))
     return extractors
 
 
@@ -92,6 +111,10 @@ async def _index_records_fts(
         if not content.strip():
             continue
 
+        await session.execute(
+            text("DELETE FROM search_fts WHERE record_id = :record_id"),
+            {"record_id": record.source_id},
+        )
         await session.execute(
             text(
                 "INSERT INTO search_fts (record_id, content, source) "

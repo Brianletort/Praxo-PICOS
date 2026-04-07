@@ -19,14 +19,10 @@ SELECT
     m.subject,
     m.date_sent,
     m.date_received,
-    a_from.address as from_address,
-    GROUP_CONCAT(DISTINCT a_to.address) as to_addresses
+    a.address as sender_address
 FROM messages m
-LEFT JOIN addresses a_from ON m.sender = a_from.ROWID
-LEFT JOIN recipients r ON m.ROWID = r.message_id
-LEFT JOIN addresses a_to ON r.address_id = a_to.ROWID
+LEFT JOIN addresses a ON m.sender = a.ROWID
 WHERE m.date_received > ?
-GROUP BY m.ROWID
 ORDER BY m.date_received DESC
 LIMIT 500
 """
@@ -65,8 +61,8 @@ class MailExtractor(BaseExtractor):
                     body="",
                     timestamp=ts,
                     metadata={
-                        "from": row["from_address"] or "",
-                        "to": (row["to_addresses"] or "").split(","),
+                        "from": row["sender_address"] or "",
+                        "to": [],
                     },
                 ))
             conn.close()

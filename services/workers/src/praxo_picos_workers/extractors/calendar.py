@@ -14,15 +14,14 @@ CALENDAR_DB_PATHS = [
 
 CALENDAR_QUERY = """
 SELECT 
-    ci.ROWID,
-    ci.summary,
-    ci.description,
-    ci.start_date,
-    ci.end_date,
-    ci.location
-FROM CalendarItem ci
-WHERE ci.start_date > ?
-ORDER BY ci.start_date ASC
+    ROWID,
+    summary,
+    description,
+    start_date,
+    end_date
+FROM CalendarItem
+WHERE start_date > ?
+ORDER BY start_date ASC
 LIMIT 500
 """
 
@@ -68,7 +67,7 @@ class CalendarExtractor(BaseExtractor):
                     body=row["description"] or "",
                     timestamp=start_ts,
                     metadata={
-                        "location": row["location"] or "",
+                        "location": "",
                         "end_time": end_ts.isoformat() if end_ts else None,
                     },
                 ))

@@ -52,10 +52,10 @@ class HybridSearch:
     async def _fts_search(self, query: str, limit: int) -> list[SearchResult]:
         sql = text("""
             SELECT record_id, content, source,
-                   rank as score
+                   bm25(search_fts) as score
             FROM search_fts
             WHERE search_fts MATCH :query
-            ORDER BY rank
+            ORDER BY bm25(search_fts)
             LIMIT :limit
         """)
 
