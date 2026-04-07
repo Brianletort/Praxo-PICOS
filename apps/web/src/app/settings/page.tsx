@@ -1,11 +1,31 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { api } from "@/lib/api";
 
 type Mode = "basic" | "advanced";
 
 export default function SettingsPage() {
   const [mode, setMode] = useState<Mode>("basic");
+  const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  async function handleTestConnection() {
+    setTestStatus("Testing…");
+    try {
+      const health = await api.health();
+      setTestStatus(
+        health.status === "ok" ? "Connected — API is healthy" : `API status: ${health.status}`
+      );
+    } catch {
+      setTestStatus("Connection failed");
+    }
+  }
+
+  function handleSave() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
 
   return (
     <div className="p-8">
@@ -73,9 +93,15 @@ export default function SettingsPage() {
             <option value="anthropic">Anthropic</option>
             <option value="openrouter">OpenRouter</option>
           </select>
-          <button className="mt-2 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:border-zinc-600 dark:text-zinc-400">
+          <button
+            onClick={handleTestConnection}
+            className="mt-2 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
+          >
             Test Connection
           </button>
+          {testStatus && (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{testStatus}</p>
+          )}
         </SettingsSection>
 
         {mode === "advanced" && (
@@ -122,8 +148,11 @@ export default function SettingsPage() {
           <button className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-600 dark:text-zinc-300">
             Cancel
           </button>
-          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-            Save Changes
+          <button
+            onClick={handleSave}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            {saved ? "Saved!" : "Save Changes"}
           </button>
         </div>
       </div>

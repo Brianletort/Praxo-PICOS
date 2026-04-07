@@ -1,8 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { StatusCard } from "@/components/status-card";
+import { api, type HealthResponse } from "@/lib/api";
 
 export default function HomePage() {
+  const router = useRouter();
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.health()
+      .then(setHealth)
+      .catch(() => setHealth(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const overallStatus = health?.status === "ok" ? "ok" as const
+    : health?.status === "degraded" ? "warning" as const
+    : health ? "error" as const
+    : "unknown" as const;
+
+  const uptimeDetail = health
+    ? `Uptime: ${Math.floor(health.uptime_seconds / 60)}m`
+    : "Unable to reach API";
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -14,35 +37,40 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatusCard
-          title="System Status"
-          status="ok"
-          detail="All services running"
-        />
-        <StatusCard
-          title="Agent Zero"
-          status="unknown"
-          detail="Not configured yet"
-          action={{ label: "Set up", onClick: () => {} }}
-        />
-        <StatusCard
-          title="Last Memory Sync"
-          status="ok"
-          detail="Just now"
-        />
-        <StatusCard
-          title="Permissions"
-          status="warning"
-          detail="Full Disk Access needed for Mail"
-          action={{ label: "Fix", onClick: () => {} }}
-        />
-        <StatusCard
-          title="Updates"
-          status="ok"
-          detail="You're on the latest version"
-        />
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatusCard
+            title="System Status"
+            status={overallStatus}
+            detail={health ? `${health.status === "ok" ? "All services running" : health.status} · ${uptimeDetail}` : uptimeDetail}
+          />
+          <StatusCard
+            title="Agent Zero"
+            status="unknown"
+            detail="Not configured yet"
+            action={{ label: "Set up", onClick: () => router.push("/settings") }}
+          />
+          <StatusCard
+            title="API Service"
+            status={health ? "ok" : "error"}
+            detail={health ? `${health.service} · ${uptimeDetail}` : "Cannot connect to API"}
+            action={health ? undefined : { label: "Fix", onClick: () => router.push("/settings") }}
+          />
+          {health && Object.entries(health.dependencies).map(([name, dep]) => (
+            <StatusCard
+              key={name}
+              title={name.charAt(0).toUpperCase() + name.slice(1)}
+              status={dep.status === "ok" || dep.status === "healthy" ? "ok" : dep.error ? "error" : "unknown"}
+              detail={dep.error ?? (dep.latency_ms != null ? `${dep.latency_ms}ms latency` : dep.status)}
+              action={dep.error ? { label: "Fix", onClick: () => router.push("/settings") } : undefined}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="mt-8">
         <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">

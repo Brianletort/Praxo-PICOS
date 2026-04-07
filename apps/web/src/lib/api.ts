@@ -1,7 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8865";
-
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(path, {
     headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
   });
@@ -42,13 +40,22 @@ export interface SourceStatus {
   records_count?: number;
 }
 
+export interface DataFlowEntry {
+  source: string;
+  status: string;
+  last_record_at: string | null;
+  records_synced: number;
+  error_message: string | null;
+}
+
 export const api = {
-  health: () => apiFetch<HealthResponse>("/health"),
-  readiness: () => apiFetch<{ status: string }>("/health/ready"),
+  health: () => apiFetch<HealthResponse>("/_api/health"),
+  readiness: () => apiFetch<{ status: string }>("/_api/health/ready"),
   search: (query: string, limit = 10) =>
     apiFetch<SearchResponse>(`/api/search?q=${encodeURIComponent(query)}&limit=${limit}`),
   sources: {
     list: () => apiFetch<{ sources: SourceStatus[] }>("/api/sources"),
     status: (name: string) => apiFetch<SourceStatus>(`/api/sources/${name}`),
   },
+  dataFlow: () => apiFetch<{ data_flow: DataFlowEntry[] }>("/api/data-flow"),
 };

@@ -62,6 +62,7 @@ describe("SelfHealingEngine", () => {
 
   it("detects unhealthy services and logs restart", async () => {
     engine._running = true;
+    engine._checkPortConflict = () => Promise.resolve(null);
     supervisor._statuses.api = { status: "unhealthy", managed: true };
     await engine._healingLoop();
     const log = engine.getLog();
@@ -70,6 +71,7 @@ describe("SelfHealingEngine", () => {
 
   it("resets restart counter when service recovers", async () => {
     engine._running = true;
+    engine._checkPortConflict = () => Promise.resolve(null);
     supervisor._statuses.api = { status: "unhealthy", managed: true };
     await engine._healingLoop();
     assert.equal(engine._restartAttempts.get("api"), 1);
