@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="docs/assets/hero-banner.svg" alt="Praxo-PICOS — Personal Intelligence & Context Operating System" width="100%"/>
-</p>
+![Praxo-PICOS Architecture](docs/assets/readme/architecture_overview.png)
 
 <p align="center">
   <a href="https://github.com/praxo/picos/releases"><img src="https://img.shields.io/badge/version-0.1.0-6366f1?style=flat-square" alt="Version"/></a>
@@ -26,44 +24,7 @@
 
 Your Mac already generates a rich stream of work context every day. PICOS captures it, indexes it, and makes it available through a dashboard and AI tools.
 
-```mermaid
-flowchart LR
-  subgraph sources ["Your Mac"]
-    Mail["Apple Mail"]
-    Cal["Calendar"]
-    Screen["Screen Activity"]
-    Docs["Documents"]
-    Vault["Obsidian Vault"]
-  end
-
-  subgraph picos ["Praxo-PICOS"]
-    Extract["Extractors"]
-    Index["Indexer"]
-    DB[("SQLite + FTS5")]
-    Vec[("Qdrant Vectors")]
-    API["Search API"]
-  end
-
-  subgraph tools ["Your Tools"]
-    Dash["Web Dashboard"]
-    Agent["AI Assistants"]
-    IDE["Cursor / Claude"]
-  end
-
-  Mail --> Extract
-  Cal --> Extract
-  Screen --> Extract
-  Docs --> Extract
-  Vault --> Extract
-  Extract --> Index
-  Index --> DB
-  Index --> Vec
-  DB --> API
-  Vec --> API
-  API --> Dash
-  API --> Agent
-  API --> IDE
-```
+![Data Flow Pipeline](docs/assets/readme/data_flow_pipeline.png)
 
 **In plain English:**
 1. **Extractors** read your local data sources (read-only — PICOS never modifies your files)
@@ -76,7 +37,7 @@ flowchart LR
 
 ### Download the App (Recommended)
 
-The fastest way to get started:
+![Getting Started](docs/assets/readme/getting_started_flow.png)
 
 1. **Download** the latest `.dmg` from [GitHub Releases](https://github.com/praxo/picos/releases)
 2. **Install** — drag Praxo-PICOS to your Applications folder and open it
@@ -115,7 +76,9 @@ Open [http://localhost:3100](http://localhost:3100) in your browser. The onboard
 
 ## What Can You Do With It?
 
-PICOS turns your scattered work context into an instantly searchable, AI-queryable memory. Here are real examples:
+PICOS turns your scattered work context into an instantly searchable, AI-queryable memory.
+
+![Capabilities](docs/assets/readme/capabilities_hub.png)
 
 | | Use Case | Example Query |
 |---|---|---|
@@ -145,57 +108,7 @@ PICOS connects to native macOS data sources. All access is **read-only** — PIC
 
 ## Architecture
 
-PICOS is a monorepo with four main components that run as local services on your Mac:
-
-```mermaid
-flowchart TB
-  subgraph desktop ["Desktop Shell · Electron"]
-    Supervisor["Process Supervisor"]
-    SelfHeal["Self-Healing"]
-    Tray["Menu Bar"]
-  end
-
-  subgraph dashboard ["Web Dashboard · Next.js"]
-    Home["Home"]
-    MemoryPage["Memory Search"]
-    SourcesPage["Sources"]
-    HealthPage["Health"]
-    SettingsPage["Settings"]
-  end
-
-  subgraph backend ["Backend API · FastAPI"]
-    SearchAPI["Hybrid Search"]
-    SourcesAPI["Source Status"]
-    ConfigAPI["Configuration"]
-    HealthAPI["Health Checks"]
-  end
-
-  subgraph workerBlock ["Workers"]
-    MailW["Mail"]
-    CalW["Calendar"]
-    ScreenW["Screen"]
-    DocsW["Documents"]
-    VaultW["Vault"]
-  end
-
-  subgraph store ["Local Storage"]
-    SQLiteDB[("SQLite + FTS5")]
-    QdrantDB[("Qdrant")]
-  end
-
-  subgraph mcpServer ["MCP Server · FastMCP"]
-    SearchMem["search_memory"]
-    Brief["get_daily_brief"]
-    ListSrc["list_sources"]
-  end
-
-  desktop --> dashboard
-  desktop --> backend
-  dashboard --> backend
-  backend --> store
-  workerBlock --> store
-  backend --> mcpServer
-```
+PICOS is a monorepo with four layers that run as local services on your Mac (see the [architecture diagram](#) at the top of this page).
 
 | Directory | What Lives Here |
 |---|---|
