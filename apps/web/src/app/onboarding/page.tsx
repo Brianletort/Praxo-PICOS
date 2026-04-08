@@ -215,6 +215,12 @@ export default function OnboardingPage() {
         return;
       }
       localStorage.setItem("picos-onboarding-complete", "true");
+      try {
+        const w = window as unknown as { picos?: { markFirstRunComplete?: () => Promise<void> } };
+        if (w.picos?.markFirstRunComplete) {
+          await w.picos.markFirstRunComplete();
+        }
+      } catch {}
       router.push("/");
     } catch (e) {
       setFinishError(e instanceof Error ? e.message : "Could not save your choices.");

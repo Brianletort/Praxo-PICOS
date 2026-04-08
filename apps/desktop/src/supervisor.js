@@ -50,11 +50,29 @@ const SERVICE_GRAPH = [
     getCommand: () => {
       const binary = findQdrant();
       if (!binary) return null;
-      const storageDir = path.join(getDataDir(), "qdrant", "storage");
+      const qdrantDir = path.join(getDataDir(), "qdrant");
+      const configDir = path.join(qdrantDir, "config");
+      const storageDir = path.join(qdrantDir, "storage");
+      const snapshotsDir = path.join(qdrantDir, "snapshots");
+      fs.mkdirSync(configDir, { recursive: true });
       fs.mkdirSync(storageDir, { recursive: true });
-      return [binary, "--port", "6733", "--grpc-port", "6734", "--storage-dir", storageDir];
+      fs.mkdirSync(snapshotsDir, { recursive: true });
+      const configPath = path.join(configDir, "config.yaml");
+      if (!fs.existsSync(configPath)) {
+        fs.writeFileSync(configPath, [
+          "service:",
+          "  http_port: 6733",
+          "  grpc_port: 6734",
+          "storage:",
+          `  storage_path: ${storageDir}`,
+          `  snapshots_path: ${snapshotsDir}`,
+          "telemetry_disabled: true",
+          "",
+        ].join("\n"));
+      }
+      return [binary, "--config-path", configPath, "--disable-telemetry"];
     },
-    cwd: () => getDataDir(),
+    cwd: () => path.join(getDataDir(), "qdrant"),
     healthUrl: "http://127.0.0.1:6733/healthz",
     healthInterval: 10000,
     dependsOn: [],
