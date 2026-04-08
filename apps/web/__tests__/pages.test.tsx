@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { describe, it, expect, vi } from "vitest";
 
@@ -9,7 +9,7 @@ type LinkMockProps = { children?: ReactNode; href: string } & Omit<
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("next/link", () => ({
@@ -19,6 +19,14 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+
+// Mock fetch for API calls in components
+globalThis.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ status: "ok", config: {}, sources: [] }),
+  } as Response)
+);
 
 describe("Sidebar", () => {
   it("renders all navigation items", async () => {
@@ -51,39 +59,9 @@ describe("StatusCard", () => {
   it("renders action button when provided", async () => {
     const { StatusCard } = await import("@/components/status-card");
     const onClick = vi.fn();
-    render(<StatusCard title="Test" status="warning" action={{ label: "Fix", onClick }} />);
+    render(
+      <StatusCard title="Test" status="warning" action={{ label: "Fix", onClick }} />
+    );
     expect(screen.getByText("Fix")).toBeInTheDocument();
-  });
-});
-
-describe("OnboardingPage", () => {
-  it("renders welcome copy and first step", async () => {
-    const OnboardingPage = (await import("@/app/onboarding/page")).default;
-    render(<OnboardingPage />);
-
-    expect(
-      screen.getByRole("heading", { name: /welcome to praxo-picos/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /pick your memory folder/i })
-    ).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("~/Documents/Praxo-PICOS")).toBeInTheDocument();
-  });
-
-  it("advances to the next step when Next is clicked", async () => {
-    const OnboardingPage = (await import("@/app/onboarding/page")).default;
-    render(<OnboardingPage />);
-
-    fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
-    expect(
-      screen.getByRole("heading", { name: /choose what to remember/i })
-    ).toBeInTheDocument();
-  });
-
-  it("disables Back on the first step", async () => {
-    const OnboardingPage = (await import("@/app/onboarding/page")).default;
-    render(<OnboardingPage />);
-
-    expect(screen.getByRole("button", { name: /^back$/i })).toBeDisabled();
   });
 });

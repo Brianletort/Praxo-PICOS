@@ -48,6 +48,20 @@ export interface DataFlowEntry {
   error_message: string | null;
 }
 
+export interface DetectAllResponse {
+  obsidian: { vaults: Array<{ path: string; name: string; note_count: number }>; found: boolean };
+  documents: { path: string; exists: boolean };
+  screenpipe: { installed: boolean; running: boolean };
+  docker: { installed: boolean; running: boolean };
+  agent_zero: { running: boolean };
+  suggestions: { vault_path: string; documents_path: string };
+}
+
+export interface ChatResponse {
+  response: string;
+  sources: SearchResult[];
+}
+
 export const api = {
   health: () => apiFetch<HealthResponse>("/_api/health"),
   readiness: () => apiFetch<{ status: string }>("/_api/health/ready"),
@@ -77,4 +91,13 @@ export const api = {
         method: "POST",
       }),
   },
+  detect: {
+    all: () => apiFetch<DetectAllResponse>("/api/detect/all"),
+    obsidian: () => apiFetch<{ vaults: Array<{ path: string; name: string; note_count: number }>; suggested: string; found: boolean }>("/api/detect/obsidian"),
+  },
+  chat: (message: string) =>
+    apiFetch<ChatResponse>("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
 };

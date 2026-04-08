@@ -1,37 +1,58 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { api } from "@/lib/api";
+import { useEffect, useState, type ReactNode } from "react";
+import { api, type DetectAllResponse } from "@/lib/api";
 
 type Mode = "basic" | "advanced";
 
 type SettingsForm = {
   vault_path: string;
+  documents_path: string;
   mail_enabled: boolean;
   calendar_enabled: boolean;
   screen_enabled: boolean;
   documents_enabled: boolean;
   vault_enabled: boolean;
   llm_provider: string;
+  llm_model: string;
+  agent_zero_enabled: boolean;
   api_port: number;
   web_dev_port: number;
   mcp_port: number;
   qdrant_http_port: number;
 };
 
-type SourceToggleKey =
-  | "mail_enabled"
-  | "calendar_enabled"
-  | "screen_enabled"
-  | "documents_enabled"
-  | "vault_enabled";
+type SourceRow = {
+  label: string;
+  key: keyof Pick<
+    SettingsForm,
+    | "mail_enabled"
+    | "calendar_enabled"
+    | "screen_enabled"
+    | "documents_enabled"
+    | "vault_enabled"
+  >;
+  detected?: (d: DetectAllResponse) => boolean;
+};
 
-const SOURCE_ROWS: { label: string; key: SourceToggleKey }[] = [
+const SOURCE_ROWS: SourceRow[] = [
   { label: "Mail", key: "mail_enabled" },
   { label: "Calendar", key: "calendar_enabled" },
-  { label: "Screen Capture", key: "screen_enabled" },
-  { label: "Documents", key: "documents_enabled" },
-  { label: "Obsidian Vault", key: "vault_enabled" },
+  {
+    label: "Screen Capture",
+    key: "screen_enabled",
+    detected: (d) => d.screenpipe.installed,
+  },
+  {
+    label: "Documents",
+    key: "documents_enabled",
+    detected: (d) => d.documents.exists,
+  },
+  {
+    label: "Obsidian Vault",
+    key: "vault_enabled",
+    detected: (d) => d.obsidian.found,
+  },
 ];
 
 type PortKey = "api_port" | "web_dev_port" | "mcp_port" | "qdrant_http_port";
@@ -46,12 +67,15 @@ const PORT_ROWS: { label: string; key: PortKey }[] = [
 function defaultForm(): SettingsForm {
   return {
     vault_path: "~/Documents/Praxo-PICOS",
+    documents_path: "",
     mail_enabled: true,
     calendar_enabled: true,
     screen_enabled: false,
     documents_enabled: false,
     vault_enabled: false,
     llm_provider: "openai",
+    llm_model: "",
+    agent_zero_enabled: false,
     api_port: 8865,
     web_dev_port: 3100,
     mcp_port: 8870,
@@ -59,10 +83,12 @@ function defaultForm(): SettingsForm {
   };
 }
 
-function configToForm(c: Record<string, any>): SettingsForm {
+function configToForm(c: Record<string, unknown>): SettingsForm {
   const d = defaultForm();
   return {
     vault_path: typeof c.vault_path === "string" ? c.vault_path : d.vault_path,
+    documents_path:
+      typeof c.documents_path === "string" ? c.documents_path : d.documents_path,
     mail_enabled: typeof c.mail_enabled === "boolean" ? c.mail_enabled : d.mail_enabled,
     calendar_enabled:
       typeof c.calendar_enabled === "boolean" ? c.calendar_enabled : d.calendar_enabled,
@@ -71,12 +97,17 @@ function configToForm(c: Record<string, any>): SettingsForm {
       typeof c.documents_enabled === "boolean" ? c.documents_enabled : d.documents_enabled,
     vault_enabled: typeof c.vault_enabled === "boolean" ? c.vault_enabled : d.vault_enabled,
     llm_provider: typeof c.llm_provider === "string" ? c.llm_provider : d.llm_provider,
-    api_port: typeof c.api_port === "number" && Number.isFinite(c.api_port) ? c.api_port : d.api_port,
+    llm_model: typeof c.llm_model === "string" ? c.llm_model : d.llm_model,
+    agent_zero_enabled:
+      typeof c.agent_zero_enabled === "boolean" ? c.agent_zero_enabled : d.agent_zero_enabled,
+    api_port:
+      typeof c.api_port === "number" && Number.isFinite(c.api_port) ? c.api_port : d.api_port,
     web_dev_port:
       typeof c.web_dev_port === "number" && Number.isFinite(c.web_dev_port)
         ? c.web_dev_port
         : d.web_dev_port,
-    mcp_port: typeof c.mcp_port === "number" && Number.isFinite(c.mcp_port) ? c.mcp_port : d.mcp_port,
+    mcp_port:
+      typeof c.mcp_port === "number" && Number.isFinite(c.mcp_port) ? c.mcp_port : d.mcp_port,
     qdrant_http_port:
       typeof c.qdrant_http_port === "number" && Number.isFinite(c.qdrant_http_port)
         ? c.qdrant_http_port
@@ -84,15 +115,18 @@ function configToForm(c: Record<string, any>): SettingsForm {
   };
 }
 
-function formToSaveBody(f: SettingsForm): Record<string, any> {
+function formToSaveBody(f: SettingsForm): Record<string, unknown> {
   return {
     vault_path: f.vault_path,
+    documents_path: f.documents_path,
     mail_enabled: f.mail_enabled,
     calendar_enabled: f.calendar_enabled,
     screen_enabled: f.screen_enabled,
     documents_enabled: f.documents_enabled,
     vault_enabled: f.vault_enabled,
     llm_provider: f.llm_provider,
+    llm_model: f.llm_model,
+    agent_zero_enabled: f.agent_zero_enabled,
     api_port: f.api_port,
     web_dev_port: f.web_dev_port,
     mcp_port: f.mcp_port,
@@ -100,44 +134,92 @@ function formToSaveBody(f: SettingsForm): Record<string, any> {
   };
 }
 
+type ConfigSaveResult =
+  | { status: "saved"; keys?: string[] }
+  | { status: "validation_error"; errors: string[] };
+
 export default function SettingsPage() {
   const [mode, setMode] = useState<Mode>("basic");
-  const [testStatus, setTestStatus] = useState<string | null>(null);
   const [form, setForm] = useState<SettingsForm | null>(null);
   const [baseline, setBaseline] = useState<SettingsForm | null>(null);
+  const [detect, setDetect] = useState<DetectAllResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveFeedback, setSaveFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [detectError, setDetectError] = useState<string | null>(null);
+  const [saveFeedback, setSaveFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(
+    null
+  );
   const [saving, setSaving] = useState(false);
+  const [envImportText, setEnvImportText] = useState("");
+  const [toast, setToast] = useState<{ ok: boolean; message: string } | null>(null);
 
-  const loadConfig = useCallback(async () => {
-    setLoadError(null);
-    try {
-      const { config } = await api.config.get();
-      const next = configToForm(config);
-      setForm(next);
-      setBaseline(next);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to load settings";
-      setLoadError(msg);
-      const fallback = defaultForm();
-      setForm(fallback);
-      setBaseline(fallback);
-    }
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
+      setDetectError(null);
+      const [cfgOutcome, detOutcome] = await Promise.allSettled([
+        api.config.get(),
+        api.detect.all(),
+      ]);
+
+      if (cancelled) return;
+
+      if (cfgOutcome.status === "fulfilled") {
+        const next = configToForm(cfgOutcome.value.config);
+        setForm(next);
+        setBaseline(next);
+      } else {
+        const msg =
+          cfgOutcome.reason instanceof Error
+            ? cfgOutcome.reason.message
+            : "Failed to load settings";
+        setLoadError(msg);
+        const fallback = defaultForm();
+        setForm(fallback);
+        setBaseline(fallback);
+      }
+
+      if (detOutcome.status === "fulfilled") {
+        setDetect(detOutcome.value);
+      } else {
+        const msg =
+          detOutcome.reason instanceof Error
+            ? detOutcome.reason.message
+            : "Detection failed";
+        setDetectError(msg);
+        setDetect(null);
+      }
+
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 4500);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   async function handleTestConnection() {
-    setTestStatus("Testing…");
     try {
       const health = await api.health();
-      setTestStatus(
-        health.status === "ok" ? "Connected — API is healthy" : `API status: ${health.status}`
-      );
-    } catch {
-      setTestStatus("Connection failed");
+      const ok = health.status === "ok";
+      setToast({
+        ok,
+        message: ok
+          ? `Connected — ${health.service} is healthy (${Math.round(health.uptime_seconds)}s uptime)`
+          : `API status: ${health.status}`,
+      });
+    } catch (e) {
+      setToast({
+        ok: false,
+        message: e instanceof Error ? e.message : "Connection failed",
+      });
     }
   }
 
@@ -146,9 +228,15 @@ export default function SettingsPage() {
     setSaveFeedback(null);
     setSaving(true);
     try {
-      await api.config.save(formToSaveBody(form));
-      setBaseline(form);
-      setSaveFeedback({ type: "ok", text: "Settings saved." });
+      const result = (await api.config.save(
+        formToSaveBody(form)
+      )) as ConfigSaveResult;
+      if (result.status === "validation_error" && Array.isArray(result.errors)) {
+        setSaveFeedback({ type: "err", text: result.errors.join("; ") });
+      } else {
+        setBaseline(form);
+        setSaveFeedback({ type: "ok", text: "Settings saved." });
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Save failed";
       setSaveFeedback({ type: "err", text: msg });
@@ -159,6 +247,7 @@ export default function SettingsPage() {
 
   function handleCancel() {
     if (baseline) setForm(baseline);
+    setEnvImportText("");
     setSaveFeedback(null);
   }
 
@@ -166,13 +255,38 @@ export default function SettingsPage() {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
 
+  function handleEnvFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      setEnvImportText(text);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  const suggestions = detect?.suggestions;
+
   return (
     <div className="p-8">
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 max-w-md rounded-lg border px-4 py-3 text-sm shadow-lg ${
+            toast.ok
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-100"
+              : "border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/90 dark:text-red-100"
+          }`}
+          role="status"
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-            Settings
-          </h1>
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Settings</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Configure your personal intelligence system
           </p>
@@ -200,46 +314,78 @@ export default function SettingsPage() {
           Could not load saved config ({loadError}). Showing defaults.
         </p>
       )}
+      {detectError && (
+        <p className="mb-4 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-300">
+          Detection unavailable ({detectError}). Suggested paths and badges may be missing.
+        </p>
+      )}
 
-      {!form ? (
+      {loading || !form ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading settings…</p>
       ) : (
         <div className="max-w-2xl space-y-6">
-          <SettingsSection title="Memory Folder">
-            <div className="flex items-center gap-3">
+          <SettingsSection title="Memory folder">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-zinc-700 dark:text-zinc-300">Vault path</span>
+              {suggestions?.vault_path && (
+                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-800 dark:bg-violet-900/50 dark:text-violet-200">
+                  Suggested
+                </span>
+              )}
+            </div>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
               <input
                 type="text"
                 value={form.vault_path}
                 onChange={(e) => updateForm("vault_path", e.target.value)}
+                placeholder={suggestions?.vault_path ?? "Path to memory / vault"}
                 className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
               />
-              <button
-                type="button"
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium dark:border-zinc-600 dark:text-zinc-300"
-              >
-                Browse
-              </button>
+              {suggestions?.vault_path && (
+                <button
+                  type="button"
+                  onClick={() => updateForm("vault_path", suggestions.vault_path)}
+                  className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:text-zinc-300"
+                >
+                  Use suggested path
+                </button>
+              )}
             </div>
+            {suggestions?.vault_path && (
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                Suggested path: <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">{suggestions.vault_path}</code>
+              </p>
+            )}
             <p className="mt-1 text-xs text-zinc-500">
-              Recommended — Where your memories and summaries are stored
+              Folder where memories and summaries are stored (text input acts as folder path).
             </p>
           </SettingsSection>
 
-          <SettingsSection title="Data Sources">
-            {SOURCE_ROWS.map((row) => (
-              <label key={row.key} className="flex items-center justify-between py-2">
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">{row.label}</span>
-                <input
-                  type="checkbox"
-                  checked={form[row.key]}
-                  onChange={(e) => updateForm(row.key, e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 dark:border-zinc-600"
-                />
-              </label>
-            ))}
+          <SettingsSection title="Data sources">
+            {SOURCE_ROWS.map((row) => {
+              const showDetected = detect && row.detected?.(detect);
+              return (
+                <label key={row.key} className="flex items-center justify-between py-2">
+                  <span className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                    {row.label}
+                    {showDetected && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">
+                        Detected
+                      </span>
+                    )}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={form[row.key]}
+                    onChange={(e) => updateForm(row.key, e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-zinc-900 dark:border-zinc-600"
+                  />
+                </label>
+              );
+            })}
           </SettingsSection>
 
-          <SettingsSection title="AI Provider">
+          <SettingsSection title="AI provider">
             <select
               value={form.llm_provider}
               onChange={(e) => updateForm("llm_provider", e.target.value)}
@@ -248,28 +394,80 @@ export default function SettingsPage() {
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
               <option value="openrouter">OpenRouter</option>
+              <option value="ollama">Ollama</option>
+              <option value="gemini">Gemini</option>
             </select>
+            {mode === "advanced" && (
+              <input
+                type="text"
+                value={form.llm_model}
+                onChange={(e) => updateForm("llm_model", e.target.value)}
+                placeholder="Model name (optional)"
+                className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              />
+            )}
             <button
               type="button"
               onClick={handleTestConnection}
-              className="mt-2 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
+              className="mt-3 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
             >
-              Test Connection
+              Test connection
             </button>
-            {testStatus && (
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{testStatus}</p>
-            )}
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Result appears as a toast in the corner.
+            </p>
           </SettingsSection>
 
           {mode === "advanced" && (
             <>
+              <SettingsSection title="Documents path">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">Folder</span>
+                  {suggestions?.documents_path && (
+                    <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-800 dark:bg-violet-900/50 dark:text-violet-200">
+                      Suggested
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <input
+                    type="text"
+                    value={form.documents_path}
+                    onChange={(e) => updateForm("documents_path", e.target.value)}
+                    placeholder={suggestions?.documents_path ?? "Documents folder"}
+                    className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  />
+                  {suggestions?.documents_path && (
+                    <button
+                      type="button"
+                      onClick={() => updateForm("documents_path", suggestions.documents_path)}
+                      className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:text-zinc-300"
+                    >
+                      Use suggested path
+                    </button>
+                  )}
+                </div>
+              </SettingsSection>
+
+              <SettingsSection title="Agent Zero">
+                <label className="flex items-center justify-between py-1">
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">Enable Agent Zero</span>
+                  <input
+                    type="checkbox"
+                    checked={form.agent_zero_enabled}
+                    onChange={(e) => updateForm("agent_zero_enabled", e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-zinc-900 dark:border-zinc-600"
+                  />
+                </label>
+              </SettingsSection>
+
               <SettingsSection title="Ports">
                 {PORT_ROWS.map((port) => (
                   <div key={port.key} className="flex items-center justify-between py-1">
                     <span className="text-sm text-zinc-600 dark:text-zinc-400">{port.label}</span>
                     <input
                       type="number"
-                      value={form[port.key] as number}
+                      value={form[port.key]}
                       onChange={(e) => {
                         const n = parseInt(e.target.value, 10);
                         updateForm(port.key, Number.isFinite(n) ? n : 0);
@@ -280,22 +478,29 @@ export default function SettingsPage() {
                 ))}
               </SettingsSection>
 
-              <SettingsSection title="Import Settings">
+              <SettingsSection title="Import .env.local">
                 <p className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  Upload a .env.local file to import API keys and configuration. Secrets will be stored
-                  securely in your Mac Keychain.
+                  Paste contents or choose a file. Review before any future import workflow; values stay
+                  in this form until you clear them.
                 </p>
-                <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 p-6 transition-colors hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600">
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Drop .env.local here or click to browse
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Secrets will be separated and stored in Keychain
-                    </p>
-                  </div>
-                  <input type="file" className="hidden" accept=".env,.env.local" />
+                <label className="mb-2 flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 p-4 transition-colors hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600">
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Choose .env.local file
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".env,.env.local"
+                    onChange={handleEnvFileChange}
+                  />
                 </label>
+                <textarea
+                  value={envImportText}
+                  onChange={(e) => setEnvImportText(e.target.value)}
+                  placeholder="# KEY=value lines…"
+                  rows={6}
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                />
               </SettingsSection>
             </>
           )}
@@ -328,7 +533,7 @@ export default function SettingsPage() {
               disabled={saving}
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
             >
-              {saving ? "Saving…" : "Save Changes"}
+              {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
         </div>
@@ -337,18 +542,10 @@ export default function SettingsPage() {
   );
 }
 
-function SettingsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <h3 className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-        {title}
-      </h3>
+      <h3 className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</h3>
       {children}
     </div>
   );

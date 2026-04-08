@@ -11,11 +11,15 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("picos-onboarding-complete")) {
+      router.replace("/onboarding");
+      return;
+    }
     api.health()
       .then(setHealth)
       .catch(() => setHealth(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   const overallStatus = health?.status === "ok" ? "ok" as const
     : health?.status === "degraded" ? "warning" as const

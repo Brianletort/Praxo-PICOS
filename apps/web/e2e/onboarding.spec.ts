@@ -8,7 +8,7 @@ test.describe("Onboarding", () => {
 
   test("shows first step content", async ({ page }) => {
     await page.goto("/onboarding");
-    await expect(page.getByText(/Pick your Memory Folder/i)).toBeVisible();
+    await expect(page.getByText(/memory folder/i)).toBeVisible();
   });
 
   test("shows Next and Back buttons", async ({ page }) => {

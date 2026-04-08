@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config.router import router as config_router
+from .detect.router import router as detect_router
 from .health import router as health_router
 from .search.router import router as search_router
 from .sources.router import router as sources_router
@@ -47,3 +48,4 @@ app.include_router(health_router)
 app.include_router(search_router)
 app.include_router(sources_router)
 app.include_router(config_router)
+app.include_router(detect_router)
