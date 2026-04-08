@@ -1,6 +1,6 @@
 {
   "name": "praxo-picos-desktop",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Praxo Personal Intelligence Operating System",
   "author": "Praxo",
@@ -39,20 +39,32 @@
       {
         "from": "../../services",
         "to": "app/services",
-        "filter": ["**/*.py", "**/__init__.py"]
+        "filter": ["**/*.py"]
       },
       {
         "from": "../../packages",
         "to": "app/packages",
-        "filter": ["**/*.py", "**/__init__.py"]
-      },
-      {
-        "from": "../../apps/web/.next",
-        "to": "app/apps/web/.next"
+        "filter": ["**/*.py"]
       },
       {
         "from": "../../pyproject.toml",
         "to": "app/pyproject.toml"
+      },
+      {
+        "from": "../../apps/web/.next/standalone",
+        "to": "app/web-standalone"
+      },
+      {
+        "from": "../../apps/web/.next/static",
+        "to": "app/web-standalone/apps/web/.next/static"
+      },
+      {
+        "from": "../../apps/web/public",
+        "to": "app/web-standalone/apps/web/public"
+      },
+      {
+        "from": "vendor/qdrant",
+        "to": "app/vendor/qdrant"
       }
     ]
   }

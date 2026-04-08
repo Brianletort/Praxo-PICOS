@@ -48,7 +48,7 @@ describe("ServiceSupervisor", () => {
 
     it("reports managed flag correctly", () => {
       const status = supervisor.getStatus();
-      assert.equal(status.qdrant.managed, false, "qdrant is not managed");
+      assert.equal(status.qdrant.managed, true, "qdrant is managed (bundled)");
       assert.equal(status.api.managed, true, "api is managed");
       assert.equal(status["agent-zero"].managed, false, "agent-zero is not managed");
     });

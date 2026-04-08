@@ -2,6 +2,9 @@ const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } = require("electr
 const path = require("path");
 const { ServiceSupervisor } = require("./supervisor");
 const { SelfHealingEngine } = require("./self-healing");
+const { DockerManager } = require("./docker-manager");
+const { checkFullDiskAccess, requestFullDiskAccess } = require("./permissions");
+const { runSetup, isSetupComplete } = require("./setup");
 
 const WEB_URL = process.env.PICOS_WEB_URL || "http://127.0.0.1:3777";
 const IS_DEV = process.env.NODE_ENV === "development" || !app.isPackaged;
@@ -10,6 +13,7 @@ let mainWindow = null;
 let tray = null;
 let supervisor = null;
 let healingEngine = null;
+let dockerManager = null;
 
 function createWindow() {
   const iconPath = path.join(__dirname, "..", "assets", "icon.png");
@@ -34,9 +38,7 @@ function createWindow() {
     mainWindow.loadURL(WEB_URL);
   }
 
-  mainWindow.on("closed", () => {
-    mainWindow = null;
-  });
+  mainWindow.on("closed", () => { mainWindow = null; });
 }
 
 function createTray() {
@@ -61,15 +63,11 @@ function createTray() {
     { label: "Restart Services", click: () => supervisor?.restartAll() },
     { label: "Quit Praxo-PICOS", click: () => app.quit() },
   ]);
-
   tray.setContextMenu(contextMenu);
 }
 
 function isFirstRun() {
-  const configPath = path.join(
-    app.getPath("userData"),
-    "first-run-complete"
-  );
+  const configPath = path.join(app.getPath("userData"), "first-run-complete");
   try {
     require("fs").accessSync(configPath);
     return false;
@@ -86,6 +84,7 @@ function markFirstRunComplete() {
 app.whenReady().then(async () => {
   supervisor = new ServiceSupervisor();
   healingEngine = new SelfHealingEngine(supervisor);
+  dockerManager = new DockerManager();
 
   createWindow();
   createTray();
@@ -96,8 +95,22 @@ app.whenReady().then(async () => {
   }
 
   if (!IS_DEV) {
+    if (!isSetupComplete()) {
+      console.log("[setup] Running first-launch setup...");
+      const result = await runSetup((msg) => console.log(`[setup] ${msg}`));
+      if (result.status === "error") {
+        console.error("[setup] Setup failed:", result.message);
+      }
+    }
+
     await supervisor.startAll();
     healingEngine.start();
+
+    setTimeout(() => {
+      if (mainWindow && !checkFullDiskAccess()) {
+        requestFullDiskAccess(mainWindow);
+      }
+    }, 5000);
   }
 
   ipcMain.handle("get-service-status", () => supervisor.getStatus());
@@ -105,6 +118,12 @@ app.whenReady().then(async () => {
   ipcMain.handle("restart-all", () => supervisor.restartAll());
   ipcMain.handle("mark-first-run-complete", () => markFirstRunComplete());
   ipcMain.handle("get-healing-log", () => healingEngine.getLog());
+
+  ipcMain.handle("docker-status", () => dockerManager.getContainerStatus());
+  ipcMain.handle("docker-start-agent-zero", () => dockerManager.start());
+  ipcMain.handle("docker-stop-agent-zero", () => dockerManager.stop());
+  ipcMain.handle("docker-health", () => dockerManager.healthCheck());
+  ipcMain.handle("check-full-disk-access", () => checkFullDiskAccess());
 });
 
 app.on("before-quit", async () => {
@@ -112,9 +131,7 @@ app.on("before-quit", async () => {
   await supervisor?.stopAll();
 });
 
-app.on("window-all-closed", () => {
-  // Keep running in tray on macOS
-});
+app.on("window-all-closed", () => {});
 
 app.on("activate", () => {
   if (mainWindow === null) createWindow();

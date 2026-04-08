@@ -32,3 +32,6 @@ build/
 *.bak.*
 AGENTS.bak.*
 .hypothesis/
+
+# Vendor binaries (downloaded at build time)
+apps/desktop/vendor/qdrant

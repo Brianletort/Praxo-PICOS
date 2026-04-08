@@ -1,231 +1,120 @@
-![Praxo-PICOS Architecture](docs/assets/readme/architecture_overview.png)
+# Praxo-PICOS
 
-<p align="center">
-  <a href="https://github.com/praxo/picos/releases"><img src="https://img.shields.io/badge/version-0.1.0-6366f1?style=flat-square" alt="Version"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/platform-macOS-000?style=flat-square&logo=apple&logoColor=white" alt="macOS"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-137%2B%20passing-brightgreen?style=flat-square" alt="Tests"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/data-100%25%20local-6366f1?style=flat-square" alt="Local Data"/></a>
-</p>
+**Praxo Personal Intelligence Operating System** -- your second brain for macOS. Captures, organizes, and surfaces your work context from email, calendar, screen activity, documents, and notes.
 
----
+## Installation (macOS)
 
-## What is Praxo-PICOS?
+### Step 1: Download
 
-**You context-switch dozens of times per day.** Every tab, email, meeting, and Slack thread adds a piece to the puzzle — and then it vanishes. By the time you need that context again, it's buried in an inbox, lost in a doc, or forgotten entirely.
+Download `Praxo-PICOS-0.3.0-arm64.dmg` from the [latest release](https://github.com/Brianletort/Praxo-PICOS/releases/latest).
 
-**Praxo-PICOS is your second brain.** It's a local-first personal intelligence system that quietly captures context from your Mac's native data sources — email, calendar, screen activity, documents, and notes — then organizes everything into a searchable, AI-queryable memory. Think of it as a photographic memory for your entire work life.
+### Step 2: Install
 
-**Context is king. Tools change; your data does not.** PICOS stores everything locally in SQLite and Qdrant. No cloud syncing. No subscriptions. No data leaving your machine. The tools on top — dashboards, AI assistants, MCP integrations — can evolve freely because the context layer underneath is permanent and portable.
+Open the DMG and drag **Praxo-PICOS** to your Applications folder.
 
----
+### Step 3: Allow the app to run
 
-## How It Works
+Since this app is not yet notarized by Apple, macOS will block it on first launch. To fix this:
 
-Your Mac already generates a rich stream of work context every day. PICOS captures it, indexes it, and makes it available through a dashboard and AI tools.
+**Option A (recommended):** Right-click the app in Applications, select "Open", then click "Open" in the dialog.
 
-![Data Flow Pipeline](docs/assets/readme/data_flow_pipeline.png)
-
-**In plain English:**
-1. **Extractors** read your local data sources (read-only — PICOS never modifies your files)
-2. **The Indexer** chunks and indexes everything for fast keyword and semantic search
-3. **The API** serves your dashboard, AI assistants, and any tool that speaks MCP
-
----
-
-## Quick Start
-
-### Download the App (Recommended)
-
-![Getting Started](docs/assets/readme/getting_started_flow.png)
-
-1. **Download** the latest `.dmg` from [GitHub Releases](https://github.com/praxo/picos/releases)
-2. **Install** — drag Praxo-PICOS to your Applications folder and open it
-3. **Set up** — the onboarding wizard walks you through choosing your data sources
-
-That's it. PICOS runs in your menu bar and keeps your memory up to date in the background.
-
-<details>
-<summary><strong>Run from source (for developers)</strong></summary>
-
-<br/>
-
-**Prerequisites:** Python 3.11+, Node.js 20+, Docker (for Qdrant)
-
+**Option B (terminal):** Run this command once:
 ```bash
-# 1. Clone and bootstrap
-git clone https://github.com/praxo/picos.git
-cd picos
-make bootstrap          # Creates Python venv + installs Node deps
-
-# 2. Start Qdrant (vector database)
-docker compose -f infra/docker/docker-compose.yml up -d
-
-# 3. Start the backend API
-make dev-api            # Runs on http://localhost:8865
-
-# 4. Start the web dashboard
-make dev-web            # Runs on http://localhost:3100
+xattr -dr com.apple.quarantine /Applications/Praxo-PICOS.app
 ```
 
-Open [http://localhost:3100](http://localhost:3100) in your browser. The onboarding wizard will guide you from there.
+### Step 4: Launch and set up
 
-</details>
+Launch Praxo-PICOS. The onboarding wizard will:
+- Auto-detect your Obsidian vaults and suggest the best path
+- Let you choose which data sources to enable
+- Configure your AI provider
+- Start all background services automatically
 
----
+### Step 5: Grant Full Disk Access (for Mail and Calendar)
 
-## What Can You Do With It?
+To read your email and calendar, macOS requires Full Disk Access:
 
-PICOS turns your scattered work context into an instantly searchable, AI-queryable memory.
+1. The app will prompt you to open System Settings
+2. Go to **Privacy & Security > Full Disk Access**
+3. Find **Praxo-PICOS** and toggle it on
+4. Restart the app
 
-![Capabilities](docs/assets/readme/capabilities_hub.png)
+## What's included
 
-| | Use Case | Example Query |
-|---|---|---|
-| **Morning Brief** | Start your day with a summary of what happened overnight | *"What happened yesterday across all my projects?"* |
-| **Deep Search** | Find anything you've seen, read, or written | *"Find that email thread from March about the API redesign"* |
-| **Meeting Prep** | Walk into every meeting with full context | *"What context do I need for my 2pm with Sarah?"* |
-| **Project Recall** | Reconstruct decisions and timelines from months ago | *"What decisions were made on Project Atlas last quarter?"* |
-| **Agent Integration** | Let AI assistants search your memory via MCP | *"Claude, search my memories for budget discussions"* |
+The DMG bundles:
 
----
+- Next.js web dashboard (standalone server -- no Node.js install needed)
+- Qdrant vector database (native ARM64 binary)
+- FastAPI backend server
+- MCP server for AI assistant integration
+- Electron desktop shell with service supervisor and self-healing
 
-## Data Sources
+### One requirement: Python 3.12+
 
-PICOS connects to native macOS data sources. All access is **read-only** — PICOS never modifies, deletes, or sends your data anywhere.
+The backend runs on Python. If you don't have it:
+```bash
+# Install via Homebrew (recommended):
+brew install python@3.14
 
-| Source | What It Reads | Default |
-|---|---|---|
-| **Apple Mail** | Local SQLite index of your email (subject, sender, body) | Enabled |
-| **Calendar** | macOS Calendar database (events, attendees, times) | Enabled |
-| **Screen Activity** | What's on your screen via [Screenpipe](https://github.com/mediar-ai/screenpipe) | Opt-in |
-| **Documents** | Text files in your Documents folder (`.md`, `.txt`, `.csv`, `.json`, `.yaml`) | Opt-in |
-| **Obsidian Vault** | Markdown notes from your Obsidian vault | Opt-in |
+# Or download from python.org
+```
 
-> **Privacy guarantee:** Your data never leaves your machine. PICOS runs entirely on localhost. There are no analytics, no telemetry, no cloud sync. Period.
+On first launch, the app automatically creates a Python environment and installs all dependencies. This takes ~30 seconds and only happens once.
 
----
+## Features
+
+- **5 data sources**: Mail, Calendar, Screenpipe, Documents, Obsidian Vault
+- **Automatic extraction**: Background pipeline runs every 15 minutes
+- **Full-text search**: FTS5-powered search across all your data
+- **AI assistant chat**: Search your memories with natural language
+- **MCP server**: 5 tools for Agent Zero integration
+- **Health Center**: Live service monitoring with self-healing
+- **Smart onboarding**: Auto-detects installed tools and suggests configuration
+- **Self-healing**: Crashed services restart automatically with exponential backoff
 
 ## Architecture
 
-PICOS is a monorepo with four layers that run as local services on your Mac (see the [architecture diagram](#) at the top of this page).
+| Component | Port | Description |
+|-----------|------|-------------|
+| API server | 8865 | FastAPI backend with SQLite + FTS5 |
+| Web dashboard | 3777 | Next.js standalone server |
+| MCP server | 8870 | FastMCP with 5 tools |
+| Qdrant | 6733 | Vector search (bundled binary) |
+| Agent Zero | 50001 | Optional Docker companion |
 
-| Directory | What Lives Here |
-|---|---|
-| `apps/desktop` | Electron shell — process supervisor, self-healing, menu bar icon |
-| `apps/web` | Next.js 16 dashboard with React 19 and Tailwind CSS |
-| `services/api` | FastAPI backend — search, sources, config, health endpoints |
-| `services/workers` | Extractors for each data source + indexing pipeline |
-| `packages/shared` | Runtime contracts and shared constants |
-| `infra/docker` | Docker Compose for Qdrant vector database |
-| `packaging/` | macOS code signing, notarization, and release scripts |
+All data stays on your machine at `~/Library/Application Support/Praxo-PICOS/`.
 
----
+## Optional: Agent Zero (AI assistant)
 
-## MCP Tools
+For a smarter AI assistant, install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and enable Agent Zero in Settings. The app will manage the Docker container for you.
 
-PICOS exposes an [MCP](https://modelcontextprotocol.io/) server so AI assistants (Claude, Cursor, Agent Zero, or any MCP client) can query your memory programmatically.
-
-| Tool | What It Does |
-|---|---|
-| `search_memory` | Hybrid keyword + semantic search across all your indexed context |
-| `get_daily_brief` | Generate a summary of all activity for a given date |
-| `list_sources` | List all configured data sources and their current status |
-| `get_source_status` | Detailed health and record count for a specific source |
-| `health_check` | Check the health of all PICOS services |
-
-**Connect to your AI assistant:**
-
-```json
-{
-  "mcpServers": {
-    "praxo-picos": {
-      "url": "http://localhost:8870/sse"
-    }
-  }
-}
-```
-
----
-
-## Why Local?
-
-PICOS is designed around a simple conviction: **your work context is too valuable to live anywhere but your own machine.**
-
-- **No cloud, no risk.** Your emails, calendar, screen activity, and documents stay on your Mac. Nothing is ever uploaded, synced, or shared.
-- **No API keys required.** Core functionality (extraction, indexing, search) works without any external services. AI features are optional and use your own API keys.
-- **Tools are swappable; context is permanent.** Dashboards, AI models, and integrations will evolve. Your indexed memory is stored in open formats (SQLite, Qdrant) that you control forever.
-- **Built for macOS power users** who live in email, documents, terminals, and code — and want total recall without giving up privacy.
-
----
-
-<details>
-<summary><strong>Developer Reference</strong></summary>
-
-### Local Ports
-
-| Service | Port |
-|---|---|
-| Backend API | `8865` |
-| Web Dashboard (dev) | `3100` |
-| Web Dashboard (packaged) | `3777` |
-| MCP Server | `8870` |
-| Qdrant HTTP | `6733` |
-| Qdrant gRPC | `6734` |
-
-### Make Targets
+## Developer Setup (run from source)
 
 ```bash
-make bootstrap          # Python venv + Node deps
+git clone https://github.com/Brianletort/Praxo-PICOS.git
+cd Praxo-PICOS
+make bootstrap          # Install Python + Node dependencies
 make dev-api            # Start API on :8865
-make dev-web            # Start dashboard on :3100
-make test               # Unit + contract tests
-make lint               # Ruff (Python) + ESLint (TypeScript)
-make typecheck          # mypy + tsc
-make regression         # Full regression suite
-make regression-fast    # Fast subset for PRs
+make dev-web            # Start web UI on :3100
+# Open http://127.0.0.1:3100
 ```
 
-### Test Suite
+### Requirements for development
 
-- **108+ Python tests** — unit, contract, regression, performance, data quality
-- **8 Vitest tests** — component and integration
-- **21 Node tests** — supervisor, self-healing, Docker manager
-- **5 CI workflows** — fast, e2e, nightly, regression-pr, regression-nightly
+- Python 3.12+
+- Node.js 20+
+- Docker (optional, for Qdrant and Agent Zero)
 
-### Release
+### Testing
 
 ```bash
-git tag v0.1.0 && git push origin v0.1.0
+make test               # Python + web unit tests
+make regression         # Full regression suite
+cd apps/desktop && npm test  # Desktop tests
+cd apps/web && npm run e2e   # Playwright E2E tests
 ```
-
-This triggers the `macos-release` workflow for code signing and notarization. See [`docs/runbooks/release.md`](docs/runbooks/release.md) for details.
-
-### Repo Layout
-
-```
-praxo-picos/
-├── apps/
-│   ├── desktop/        # Electron shell
-│   └── web/            # Next.js dashboard
-├── services/
-│   ├── api/            # FastAPI backend
-│   └── workers/        # Extractors + indexing
-├── packages/shared/    # Runtime contracts
-├── infra/docker/       # Qdrant compose
-├── packaging/          # macOS signing scripts
-├── docs/               # Standards + runbooks
-└── tests/              # Full test suite
-```
-
-</details>
-
----
-
-## Contributing
-
-We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT
+Proprietary. All rights reserved.
