@@ -42,14 +42,17 @@ def _find_obsidian_vaults() -> list[dict[str, Any]]:
                         "name": p.name,
                         "note_count": md_count,
                     })
-        except PermissionError:
+        except OSError:
             continue
     return vaults
 
 
 @router.get("/api/detect/obsidian")
 async def detect_obsidian() -> dict[str, Any]:
-    vaults = _find_obsidian_vaults()
+    try:
+        vaults = _find_obsidian_vaults()
+    except Exception:
+        vaults = []
     suggested = vaults[0]["path"] if vaults else str(HOME / "Documents" / "Praxo-PICOS")
     return {"vaults": vaults, "suggested": suggested, "found": len(vaults) > 0}
 
@@ -62,7 +65,7 @@ async def detect_documents() -> dict[str, Any]:
     if exists:
         try:
             file_count = sum(1 for f in docs.iterdir() if f.is_file())
-        except PermissionError:
+        except OSError:
             pass
     return {
         "path": str(docs),
@@ -109,7 +112,10 @@ async def detect_agent_zero() -> dict[str, Any]:
 
 @router.get("/api/detect/all")
 async def detect_all() -> dict[str, Any]:
-    obsidian = _find_obsidian_vaults()
+    try:
+        obsidian = _find_obsidian_vaults()
+    except Exception:
+        obsidian = []
     docs_path = HOME / "Documents"
 
     docker_installed = shutil.which("docker") is not None

@@ -21,6 +21,28 @@ function getWebServiceEnv({
   };
 }
 
+async function waitForApiHealth({
+  url = "http://127.0.0.1:8865/health",
+  maxAttempts = 15,
+  intervalMs = 2000,
+  fetchFn = globalThis.fetch,
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+  log = () => {},
+} = {}) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const res = await fetchFn(url);
+      if (res.ok) {
+        log(`[health] API ready after ${(i + 1) * intervalMs / 1000}s`);
+        return true;
+      }
+    } catch {}
+    await sleep(intervalMs);
+  }
+  log("[health] API did not become ready in time");
+  return false;
+}
+
 async function startPackagedRuntime({
   isSetupComplete,
   runSetup,
@@ -34,6 +56,7 @@ async function startPackagedRuntime({
   log = () => {},
   error = () => {},
   fullDiskAccessDelayMs = 5000,
+  waitForHealth = waitForApiHealth,
 }) {
   if (!isSetupComplete()) {
     log("[setup] Running first-launch setup...");
@@ -45,6 +68,9 @@ async function startPackagedRuntime({
 
   await supervisor.startAll();
   healingEngine.start();
+
+  await waitForHealth({ log });
+
   createWindow(initialUrl);
 
   setPromptTimer(() => {
@@ -57,5 +83,6 @@ async function startPackagedRuntime({
 module.exports = {
   getInitialWindowUrl,
   getWebServiceEnv,
+  waitForApiHealth,
   startPackagedRuntime,
 };

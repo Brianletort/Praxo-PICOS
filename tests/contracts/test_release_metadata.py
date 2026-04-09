@@ -67,3 +67,21 @@ def test_macos_release_workflow_attaches_installer_assets():
     assert "gh release upload" in workflow
     assert "dist/Praxo-PICOS.pkg" in workflow
     assert "dist/desktop/*.dmg" in workflow
+
+
+@pytest.mark.contract
+def test_mac_target_does_not_include_zip():
+    desktop_package = load_json(ROOT / "apps" / "desktop" / "package.json")
+    targets = desktop_package["build"]["mac"]["target"]
+
+    assert "zip" not in targets, "zip target enables Squirrel auto-update distribution"
+    assert "dmg" in targets
+
+
+@pytest.mark.contract
+def test_rebrand_frameworks_script_exists():
+    script = ROOT / "packaging" / "rebrand_frameworks.sh"
+    assert script.exists(), "rebrand_frameworks.sh needed to fix Squirrel identity in System Settings"
+    text = script.read_text()
+    assert "Praxo-PICOS Updater" in text
+    assert "com.praxo.picos.updater" in text

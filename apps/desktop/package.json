@@ -1,6 +1,6 @@
 {
   "name": "praxo-picos-desktop",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": true,
   "description": "Praxo Personal Intelligence Operating System",
   "author": "Praxo",
@@ -23,7 +23,7 @@
     "mac": {
       "icon": "assets/icon.png",
       "category": "public.app-category.productivity",
-      "target": ["dmg", "zip"],
+      "target": ["dmg"],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "../../packaging/entitlements.plist",

@@ -7,7 +7,7 @@
 ### One-line install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.3/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.4/scripts/install.sh | bash
 ```
 
 This automatically:
@@ -16,7 +16,7 @@ This automatically:
 - Downloads the Qdrant vector database
 - Creates the `picos` command
 
-The installer is pinned to the `v0.3.3` release by default, so users get a reproducible build instead of whatever happens to be on `main`.
+The installer is pinned to the `v0.3.4` release by default, so users get a reproducible build instead of whatever happens to be on `main`.
 
 ### Launch:
 

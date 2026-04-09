@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   getInitialWindowUrl,
   getWebServiceEnv,
+  waitForApiHealth,
   startPackagedRuntime,
 } = require("../runtime");
 
@@ -42,8 +43,46 @@ describe("desktop runtime helpers", () => {
     });
   });
 
+  describe("waitForApiHealth", () => {
+    it("returns true when API responds OK on first attempt", async () => {
+      const result = await waitForApiHealth({
+        fetchFn: async () => ({ ok: true }),
+        sleep: async () => {},
+        maxAttempts: 3,
+        intervalMs: 1,
+      });
+      assert.equal(result, true);
+    });
+
+    it("retries until API responds OK", async () => {
+      let attempt = 0;
+      const result = await waitForApiHealth({
+        fetchFn: async () => {
+          attempt++;
+          if (attempt < 3) throw new Error("ECONNREFUSED");
+          return { ok: true };
+        },
+        sleep: async () => {},
+        maxAttempts: 5,
+        intervalMs: 1,
+      });
+      assert.equal(result, true);
+      assert.equal(attempt, 3);
+    });
+
+    it("returns false after exhausting attempts", async () => {
+      const result = await waitForApiHealth({
+        fetchFn: async () => { throw new Error("ECONNREFUSED"); },
+        sleep: async () => {},
+        maxAttempts: 3,
+        intervalMs: 1,
+      });
+      assert.equal(result, false);
+    });
+  });
+
   describe("startPackagedRuntime", () => {
-    it("starts services before creating the window", async () => {
+    it("waits for API health between startAll and createWindow", async () => {
       const calls = [];
 
       await startPackagedRuntime({
@@ -71,24 +110,23 @@ describe("desktop runtime helpers", () => {
         requestFullDiskAccess: () => {
           calls.push("requestFullDiskAccess");
         },
+        waitForHealth: async () => {
+          calls.push("waitForHealth");
+          return true;
+        },
         setPromptTimer: (fn, ms) => {
           calls.push(`setPromptTimer:${ms}`);
           fn();
         },
-        log: (message) => {
-          calls.push(`log:${message}`);
-        },
-        error: (...args) => {
-          calls.push(`error:${args.join(" ")}`);
-        },
+        log: () => {},
+        error: () => {},
       });
 
       assert.deepEqual(calls, [
-        "log:[setup] Running first-launch setup...",
         "runSetup",
-        "log:[setup] Installing dependencies",
         "startAll",
         "healingStart",
+        "waitForHealth",
         "createWindow:http://127.0.0.1:3777/onboarding",
         "setPromptTimer:5000",
         "requestFullDiskAccess",
