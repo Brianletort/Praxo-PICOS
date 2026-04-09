@@ -1,119 +1,96 @@
 # Praxo-PICOS
 
-**Praxo Personal Intelligence Operating System** -- your second brain for macOS. Captures, organizes, and surfaces your work context from email, calendar, screen activity, documents, and notes.
+**Praxo Personal Intelligence Operating System** -- your second brain for macOS. Captures context from email, calendar, screen activity, documents, and notes, then makes it searchable and actionable. Everything runs locally -- your data never leaves your machine.
 
-## Installation (macOS)
+## Quick Start (2 minutes)
 
-### Step 1: Download
+### One-line install:
 
-Download `Praxo-PICOS-0.3.0-arm64.dmg` from the [latest release](https://github.com/Brianletort/Praxo-PICOS/releases/latest).
-
-### Step 2: Install
-
-Open the DMG and drag **Praxo-PICOS** to your Applications folder.
-
-### Step 3: Allow the app to run
-
-Since this app is not yet notarized by Apple, macOS will block it on first launch. To fix this:
-
-**Option A (recommended):** Right-click the app in Applications, select "Open", then click "Open" in the dialog.
-
-**Option B (terminal):** Run this command once:
 ```bash
-xattr -dr com.apple.quarantine /Applications/Praxo-PICOS.app
+curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/main/scripts/install.sh | bash
 ```
 
-### Step 4: Launch and set up
+This automatically:
+- Installs Python and Node.js if needed (via Homebrew)
+- Downloads and sets up Praxo-PICOS
+- Downloads the Qdrant vector database
+- Creates the `picos` command
 
-Launch Praxo-PICOS. The onboarding wizard will:
-- Auto-detect your Obsidian vaults and suggest the best path
-- Let you choose which data sources to enable
-- Configure your AI provider
-- Start all background services automatically
+### Launch:
 
-### Step 5: Grant Full Disk Access (for Mail and Calendar)
-
-To read your email and calendar, macOS requires Full Disk Access:
-
-1. The app will prompt you to open System Settings
-2. Go to **Privacy & Security > Full Disk Access**
-3. Find **Praxo-PICOS** and toggle it on
-4. Restart the app
-
-## What's included
-
-The DMG bundles:
-
-- Next.js web dashboard (standalone server -- no Node.js install needed)
-- Qdrant vector database (native ARM64 binary)
-- FastAPI backend server
-- MCP server for AI assistant integration
-- Electron desktop shell with service supervisor and self-healing
-
-### One requirement: Python 3.12+
-
-The backend runs on Python. If you don't have it:
 ```bash
-# Install via Homebrew (recommended):
-brew install python@3.14
-
-# Or download from python.org
+picos
 ```
 
-On first launch, the app automatically creates a Python environment and installs all dependencies. This takes ~30 seconds and only happens once.
+Then open **http://127.0.0.1:3100** in your browser. The smart onboarding wizard will guide you through setup.
+
+### Grant Full Disk Access (for email and calendar)
+
+To read your Mail and Calendar data, macOS requires Full Disk Access:
+
+1. Open **System Settings > Privacy & Security > Full Disk Access**
+2. Click the **+** button
+3. Navigate to your terminal app (Terminal.app or iTerm) and add it
+4. Restart `picos`
+
+## What's Included
+
+Everything runs locally on your machine -- no cloud services required.
+
+| Component | Description |
+|-----------|-------------|
+| **Qdrant** | Vector database for semantic search (bundled binary) |
+| **FastAPI** | Backend API with SQLite and FTS5 full-text search |
+| **Next.js** | Web dashboard with smart onboarding |
+| **MCP Server** | 5 tools for AI assistant integration |
 
 ## Features
 
 - **5 data sources**: Mail, Calendar, Screenpipe, Documents, Obsidian Vault
 - **Automatic extraction**: Background pipeline runs every 15 minutes
-- **Full-text search**: FTS5-powered search across all your data
-- **AI assistant chat**: Search your memories with natural language
-- **MCP server**: 5 tools for Agent Zero integration
-- **Health Center**: Live service monitoring with self-healing
-- **Smart onboarding**: Auto-detects installed tools and suggests configuration
+- **Full-text search**: BM25-ranked search across all indexed data
+- **AI assistant chat**: Natural language search over your personal knowledge base
+- **Smart onboarding**: Auto-detects Obsidian vaults, Screenpipe, Docker, and Agent Zero
+- **Health Center**: Real-time monitoring of all services with one-click repair
 - **Self-healing**: Crashed services restart automatically with exponential backoff
+- **Config validation**: Path checks, port validation, and helpful error messages
 
 ## Architecture
 
-| Component | Port | Description |
-|-----------|------|-------------|
+| Service | Port | Description |
+|---------|------|-------------|
 | API server | 8865 | FastAPI backend with SQLite + FTS5 |
-| Web dashboard | 3777 | Next.js standalone server |
-| MCP server | 8870 | FastMCP with 5 tools |
-| Qdrant | 6733 | Vector search (bundled binary) |
-| Agent Zero | 50001 | Optional Docker companion |
+| Web dashboard | 3100 | Next.js with smart UI |
+| Qdrant | 6733 | Vector search |
+| MCP server | 8870 | AI tool integration |
 
-All data stays on your machine at `~/Library/Application Support/Praxo-PICOS/`.
+All data is stored at `~/Library/Application Support/Praxo-PICOS/`.
 
 ## Optional: Agent Zero (AI assistant)
 
-For a smarter AI assistant, install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and enable Agent Zero in Settings. The app will manage the Docker container for you.
+For a smarter AI assistant, install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and enable Agent Zero in Settings. Praxo-PICOS will manage the Docker container for you.
 
-## Developer Setup (run from source)
+## Development
 
 ```bash
 git clone https://github.com/Brianletort/Praxo-PICOS.git
 cd Praxo-PICOS
-make bootstrap          # Install Python + Node dependencies
-make dev-api            # Start API on :8865
-make dev-web            # Start web UI on :3100
-# Open http://127.0.0.1:3100
+make bootstrap
+make dev-api    # Terminal 1: API on :8865
+make dev-web    # Terminal 2: Web on :3100
 ```
-
-### Requirements for development
-
-- Python 3.12+
-- Node.js 20+
-- Docker (optional, for Qdrant and Agent Zero)
 
 ### Testing
 
 ```bash
-make test               # Python + web unit tests
+make test               # Unit + contract tests
 make regression         # Full regression suite
-cd apps/desktop && npm test  # Desktop tests
 cd apps/web && npm run e2e   # Playwright E2E tests
 ```
+
+## macOS Desktop App (Coming Soon)
+
+A signed and notarized `.dmg` installer is in development. The current release uses the install script above for maximum compatibility across macOS versions.
 
 ## License
 
