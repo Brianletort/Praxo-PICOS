@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,30 @@ from fastapi import APIRouter, Body
 router = APIRouter()
 
 VALID_PROVIDERS = {"openai", "anthropic", "openrouter", "ollama", "gemini"}
+CHAT_QUERY_STOPWORDS = {
+    "a",
+    "about",
+    "an",
+    "anything",
+    "are",
+    "can",
+    "do",
+    "find",
+    "for",
+    "have",
+    "i",
+    "is",
+    "know",
+    "me",
+    "on",
+    "please",
+    "show",
+    "tell",
+    "the",
+    "there",
+    "what",
+    "you",
+}
 
 
 def _validate_config(body: dict[str, Any]) -> list[str]:
@@ -39,6 +64,25 @@ def _validate_config(body: dict[str, Any]) -> list[str]:
         errors.append(f"Unknown provider: {body['llm_provider']}. Valid: {', '.join(sorted(VALID_PROVIDERS))}")
 
     return errors
+
+
+def _chat_search_queries(message: str) -> list[str]:
+    normalized = " ".join(message.split()).strip()
+    if not normalized:
+        return []
+
+    queries = [normalized]
+    keywords = [
+        word.lower()
+        for word in re.findall(r"[A-Za-z0-9']+", normalized)
+        if word.lower() not in CHAT_QUERY_STOPWORDS
+    ]
+    if keywords:
+        keyword_query = " ".join(keywords)
+        if keyword_query not in queries:
+            queries.append(keyword_query)
+
+    return queries
 
 
 @router.get("/api/config")
@@ -134,7 +178,11 @@ async def chat(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
         engine = get_engine()
         search = HybridSearch(engine=engine)
-        results = await search.search(query=query, limit=5)
+        results = []
+        for search_query in _chat_search_queries(query):
+            results = await search.search(query=search_query, limit=5)
+            if results:
+                break
 
         if results:
             context_parts = [f"- {r.snippet[:200]}" for r in results]
