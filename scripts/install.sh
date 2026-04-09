@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # Praxo-PICOS Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.2/scripts/install.sh | bash
 
 INSTALL_DIR="${PICOS_INSTALL_DIR:-$HOME/Applications/Praxo-PICOS}"
-REPO_URL="https://github.com/Brianletort/Praxo-PICOS.git"
+REPO_URL="${PICOS_REPO_URL:-https://github.com/Brianletort/Praxo-PICOS.git}"
+PICOS_GIT_REF="${PICOS_GIT_REF:-v0.3.2}"
 QDRANT_VERSION="v1.17.1"
 QDRANT_URL="https://github.com/qdrant/qdrant/releases/download/${QDRANT_VERSION}/qdrant-aarch64-apple-darwin.tar.gz"
 
@@ -20,6 +21,14 @@ echo ""
 
 check_command() {
   command -v "$1" &>/dev/null
+}
+
+checkout_release_ref() {
+  git fetch --tags origin
+  git checkout "$PICOS_GIT_REF"
+  if git show-ref --verify --quiet "refs/remotes/origin/$PICOS_GIT_REF"; then
+    git pull --ff-only origin "$PICOS_GIT_REF"
+  fi
 }
 
 install_homebrew() {
@@ -82,13 +91,14 @@ if [ -d "$INSTALL_DIR/.git" ]; then
   echo ""
   echo "→ Updating existing installation at $INSTALL_DIR..."
   cd "$INSTALL_DIR"
-  git pull --ff-only
+  checkout_release_ref
 else
   echo ""
-  echo "→ Cloning Praxo-PICOS to $INSTALL_DIR..."
+  echo "→ Cloning Praxo-PICOS $PICOS_GIT_REF to $INSTALL_DIR..."
   mkdir -p "$(dirname "$INSTALL_DIR")"
   git clone "$REPO_URL" "$INSTALL_DIR"
   cd "$INSTALL_DIR"
+  checkout_release_ref
 fi
 
 # --- Python environment ---

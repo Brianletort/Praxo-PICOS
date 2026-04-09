@@ -7,7 +7,7 @@
 ### One-line install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.2/scripts/install.sh | bash
 ```
 
 This automatically:
@@ -15,6 +15,8 @@ This automatically:
 - Downloads and sets up Praxo-PICOS
 - Downloads the Qdrant vector database
 - Creates the `picos` command
+
+The installer is pinned to the `v0.3.2` release by default, so users get a reproducible build instead of whatever happens to be on `main`.
 
 ### Launch:
 
@@ -60,7 +62,8 @@ Everything runs locally on your machine -- no cloud services required.
 | Service | Port | Description |
 |---------|------|-------------|
 | API server | 8865 | FastAPI backend with SQLite + FTS5 |
-| Web dashboard | 3100 | Next.js with smart UI |
+| Web dashboard (source install) | 3100 | Next.js dev server used by `picos` |
+| Web dashboard (packaged runtime) | 3777 | Next.js standalone runtime used by the desktop app |
 | Qdrant | 6733 | Vector search |
 | MCP server | 8870 | AI tool integration |
 
@@ -90,7 +93,7 @@ cd apps/web && npm run e2e   # Playwright E2E tests
 
 ## macOS Desktop App (Coming Soon)
 
-A signed and notarized `.dmg` installer is in development. The current release uses the install script above for maximum compatibility across macOS versions.
+A signed and notarized `.dmg` installer is still pending Apple Developer ID signing. The supported install path today is the versioned install script above; do not rely on older unsigned `.dmg` assets.
 
 ## License
 
