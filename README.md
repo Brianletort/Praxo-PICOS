@@ -7,7 +7,7 @@
 ### One-line install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.2/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.3/scripts/install.sh | bash
 ```
 
 This automatically:
@@ -16,7 +16,7 @@ This automatically:
 - Downloads the Qdrant vector database
 - Creates the `picos` command
 
-The installer is pinned to the `v0.3.2` release by default, so users get a reproducible build instead of whatever happens to be on `main`.
+The installer is pinned to the `v0.3.3` release by default, so users get a reproducible build instead of whatever happens to be on `main`.
 
 ### Launch:
 
@@ -91,9 +91,19 @@ make regression         # Full regression suite
 cd apps/web && npm run e2e   # Playwright E2E tests
 ```
 
-## macOS Desktop App (Coming Soon)
+## macOS Desktop App
 
-A signed and notarized `.dmg` installer is still pending Apple Developer ID signing. The supported install path today is the versioned install script above; do not rely on older unsigned `.dmg` assets.
+The latest GitHub release includes unsigned internal-use `.dmg` and `.pkg` installer assets for Apple Silicon Macs.
+
+Because they are unsigned, macOS may quarantine them. If that happens:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Praxo-PICOS.app"
+```
+
+Or right-click the app and choose **Open** once to bypass Gatekeeper for internal testing.
+
+A signed and notarized desktop installer is still pending Apple Developer ID signing. The versioned install script above remains the most reliable path.
 
 ## License
 

@@ -44,3 +44,26 @@ def test_readme_uses_the_versioned_installer_url():
 
     assert installer_url in readme
     assert re.search(r"curl -fsSL .*?/scripts/install\.sh \| bash", readme)
+
+
+@pytest.mark.contract
+def test_desktop_internal_build_includes_standalone_next_runtime():
+    desktop_package = load_json(ROOT / "apps" / "desktop" / "package.json")
+    build_script = desktop_package["scripts"]["build"]
+    extra_resources = desktop_package["build"]["extraResources"]
+
+    assert "-c.mac.hardenedRuntime=false" in build_script
+    assert any(
+        resource.get("from") == "../../apps/web/.next/standalone/node_modules"
+        and resource.get("to") == "app/web-standalone/node_modules"
+        for resource in extra_resources
+    )
+
+
+@pytest.mark.contract
+def test_macos_release_workflow_attaches_installer_assets():
+    workflow = (ROOT / ".github" / "workflows" / "macos-release.yml").read_text()
+
+    assert "gh release upload" in workflow
+    assert "dist/Praxo-PICOS.pkg" in workflow
+    assert "dist/desktop/*.dmg" in workflow

@@ -1,14 +1,16 @@
 {
   "name": "praxo-picos-desktop",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "Praxo Personal Intelligence Operating System",
   "author": "Praxo",
   "main": "src/main.js",
   "scripts": {
     "dev": "electron .",
-    "build": "electron-builder --mac",
-    "build:dir": "electron-builder --mac --dir",
+    "build": "electron-builder --mac --publish never -c.mac.hardenedRuntime=false",
+    "build:dir": "electron-builder --mac --dir --publish never -c.mac.hardenedRuntime=false",
+    "build:signed": "electron-builder --mac --publish never",
+    "build:signed:dir": "electron-builder --mac --dir --publish never",
     "test": "node --test src/__tests__/*.test.js"
   },
   "devDependencies": {
@@ -51,8 +53,12 @@
         "to": "app/pyproject.toml"
       },
       {
-        "from": "../../apps/web/.next/standalone",
-        "to": "app/web-standalone"
+        "from": "../../apps/web/.next/standalone/apps",
+        "to": "app/web-standalone/apps"
+      },
+      {
+        "from": "../../apps/web/.next/standalone/node_modules",
+        "to": "app/web-standalone/node_modules"
       },
       {
         "from": "../../apps/web/.next/static",

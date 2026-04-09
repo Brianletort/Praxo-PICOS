@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Praxo-PICOS Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.2/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/Brianletort/Praxo-PICOS/v0.3.3/scripts/install.sh | bash
 
 INSTALL_DIR="${PICOS_INSTALL_DIR:-$HOME/Applications/Praxo-PICOS}"
 REPO_URL="${PICOS_REPO_URL:-https://github.com/Brianletort/Praxo-PICOS.git}"
-PICOS_GIT_REF="${PICOS_GIT_REF:-v0.3.2}"
+PICOS_GIT_REF="${PICOS_GIT_REF:-v0.3.3}"
 QDRANT_VERSION="v1.17.1"
 QDRANT_URL="https://github.com/qdrant/qdrant/releases/download/${QDRANT_VERSION}/qdrant-aarch64-apple-darwin.tar.gz"
 

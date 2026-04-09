@@ -3,6 +3,7 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const { getWebServiceEnv } = require("./runtime");
 
 function getAppRoot() {
   try {
@@ -124,7 +125,7 @@ const SERVICE_GRAPH = [
       if (fs.existsSync(path.join(standalone, "server.js"))) return standalone;
       return path.join(root, "apps", "web");
     },
-    env: () => ({ PORT: "3777", HOSTNAME: "127.0.0.1", PICOS_API_URL: "http://127.0.0.1:8865" }),
+    env: () => getWebServiceEnv(),
     healthUrl: "http://127.0.0.1:3777",
     healthInterval: 15000,
     dependsOn: ["api"],
