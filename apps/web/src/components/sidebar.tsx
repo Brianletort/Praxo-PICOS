@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMode } from "@/lib/use-mode";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: "🏠" },
+  { href: "/analytics", label: "Insights", advancedLabel: "Analytics", icon: "✨" },
   { href: "/assistant", label: "Assistant", icon: "💬" },
   { href: "/memory", label: "Memory", icon: "🧠" },
   { href: "/sources", label: "Sources", icon: "📥" },
@@ -14,6 +16,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { isAdvanced } = useMode();
 
   return (
     <aside className="flex w-56 flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -30,6 +33,11 @@ export function Sidebar() {
               ? pathname === "/"
               : pathname.startsWith(item.href);
 
+          const displayLabel =
+            isAdvanced && "advancedLabel" in item && item.advancedLabel
+              ? item.advancedLabel
+              : item.label;
+
           return (
             <Link
               key={item.href}
@@ -41,7 +49,7 @@ export function Sidebar() {
               }`}
             >
               <span className="text-base">{item.icon}</span>
-              {item.label}
+              {displayLabel}
             </Link>
           );
         })}

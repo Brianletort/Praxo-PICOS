@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .analytics.routes import privacy_router, router as analytics_router
 from .config.router import router as config_router
 from .detect.router import router as detect_router
 from .health import router as health_router
@@ -49,3 +50,5 @@ app.include_router(search_router)
 app.include_router(sources_router)
 app.include_router(config_router)
 app.include_router(detect_router)
+app.include_router(analytics_router)
+app.include_router(privacy_router)

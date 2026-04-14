@@ -1,5 +1,14 @@
 from .engine import create_tables, get_engine
-from .models import Base, ConfigEntry, DataFlowStatus, ExtractedRecord
+from .models import (
+    Base,
+    ConfigEntry,
+    ConsentRecord,
+    DataFlowStatus,
+    ExtractedRecord,
+    MemoryObjectRecord,
+    ProcessingStatus,
+    RelationshipRecord,
+)
 from .session import AsyncSessionLocal, get_session
 
 __all__ = [
@@ -8,7 +17,11 @@ __all__ = [
     "get_session",
     "AsyncSessionLocal",
     "Base",
+    "ConsentRecord",
     "ExtractedRecord",
     "DataFlowStatus",
     "ConfigEntry",
+    "MemoryObjectRecord",
+    "ProcessingStatus",
+    "RelationshipRecord",
 ]

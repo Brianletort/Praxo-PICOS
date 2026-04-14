@@ -56,7 +56,15 @@ class PicosSettings(BaseSettings):
 
     # LLM provider
     llm_provider: str = Field(default="openai")
-    llm_model: str = Field(default="gpt-4o-mini")
+    llm_model: str = Field(default="gpt-5.4-mini")
+
+    # Intelligence pipeline (premium defaults -- everything on)
+    intelligence_enabled: bool = Field(default=True)
+    vision_model: str = Field(default="gpt-5.4-pro")
+    coaching_model: str = Field(default="gpt-5.4")
+    lightweight_model: str = Field(default="gpt-5.4-mini")
+    max_frames_per_meeting: int = Field(default=30)
+    enrichment_delay_s: int = Field(default=300)
 
     # Agent Zero
     agent_zero_enabled: bool = Field(default=False)

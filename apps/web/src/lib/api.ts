@@ -100,4 +100,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ message }),
     }),
+  analytics: {
+    day: (date?: string) => {
+      const params = date ? `?date=${date}` : "";
+      return apiFetch<any>(`/api/analytics/day${params}`);
+    },
+    meetings: (rangeWeeks = 4, detail: "simple" | "full" = "simple") =>
+      apiFetch<any>(`/api/analytics/meetings?range_weeks=${rangeWeeks}&detail=${detail}`),
+    meeting: (id: string, detail: "simple" | "full" = "simple") =>
+      apiFetch<any>(`/api/analytics/meetings/${id}?detail=${detail}`),
+    person: (id: string, detail: "simple" | "full" = "simple") =>
+      apiFetch<any>(`/api/analytics/person/${id}?detail=${detail}`),
+    readiness: () => apiFetch<any>("/api/analytics/readiness"),
+  },
 };

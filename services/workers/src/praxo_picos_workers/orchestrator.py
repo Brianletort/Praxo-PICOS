@@ -6,6 +6,7 @@ SQLite, indexes into FTS5, and updates DataFlowStatus.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -86,7 +87,7 @@ async def _insert_records(
             title=record.title,
             body=record.body,
             timestamp=record.timestamp,
-            metadata_json=str(record.metadata) if record.metadata else None,
+            metadata_json=json.dumps(record.metadata, default=str) if record.metadata else None,
         )
         session.add(db_record)
         inserted += 1
@@ -210,6 +211,19 @@ async def run_extraction_cycle(
                 pass
             results[source_name] = {"status": "error", "error": str(e)[:500]}
 
+    # Stage 2+3: Enrichment pipeline -- promote, enrich, analyze
+    if settings.intelligence_enabled:
+        try:
+            from .enrichment.pipeline import EnrichmentPipeline
+
+            pipeline = EnrichmentPipeline(engine, settings)
+            enrichment_result = await pipeline.run()
+            results["enrichment"] = enrichment_result.get("stats", {})
+            logger.info("Enrichment completed: %s", enrichment_result.get("status"))
+        except Exception:
+            logger.exception("Enrichment pipeline failed")
+            results["enrichment"] = {"status": "error"}
+
     return {"status": "completed", "sources": results}
 
 
@@ -217,7 +231,7 @@ async def extraction_loop(
     engine: AsyncEngine | None = None,
     interval: int = DEFAULT_INTERVAL_SECONDS,
 ) -> None:
-    """Background loop that runs extraction cycles on a schedule."""
+    """Background loop that runs extraction + enrichment cycles on a schedule."""
     logger.info("Extraction loop started (interval=%ds)", interval)
     while True:
         try:
